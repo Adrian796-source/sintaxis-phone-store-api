@@ -1,0 +1,39 @@
+services:
+  # ===== BASE DE DATOS =====
+  postgres:
+    image: postgres:16-alpine
+    container_name: sintaxis-db
+    environment:
+      POSTGRES_USER: ${DB_USER}          # ← Lee desde .env
+      POSTGRES_PASSWORD: ${DB_PASSWORD}  # ← Lee desde .env
+      POSTGRES_DB: sintaxisdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== API =====
+  app:
+    build: .
+    container_name: sintaxis-api
+    env_file:
+      - .env                        # ← LEE TODAS LAS VARIABLES DEL .env
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      ## sobrescribir variables si es necesario, o docker  aquí
+      DB_HOST: postgres
+
+volumes:
+  postgres_data:
