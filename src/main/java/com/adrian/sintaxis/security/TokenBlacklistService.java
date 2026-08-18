@@ -11,14 +11,12 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
 public class TokenBlacklistService {
 
     private final ConfiguracionJwt configuracionJwt;
-
 
     // Almacenamiento en memoria (para producción usar Redis o base de datos)
     private final ConcurrentHashMap<String, Date> blacklist = new ConcurrentHashMap<>();
@@ -102,6 +100,7 @@ public class TokenBlacklistService {
             System.out.println("🧹 Limpieza programada completada. Tamaño actual: " + blacklist.size());
         }
     }
+
     /**
      * Obtiene la cantidad de tokens en blacklist (para monitoreo)
      */
