@@ -48,3 +48,12 @@ uploads/*
 Thumbs.db
 *.log
 *.pid
+
+# Archivos de entorno
+.env
+.env.*
+.env.test
+.env.local
+.env.production
+*.env.*
+dependency-tree.txt
