@@ -29,7 +29,9 @@ class TokenBlacklistServiceTest {
     @InjectMocks
     private TokenBlacklistService tokenBlacklistService;
 
-    private static final String SECRET_KEY_STRING = "dGVzdHNlY3JldGtleWZvcnRlc3RwdXJwb3Nlc29ubHlzZWN1cmVrZXlmb3J0ZXN0c2VjcmV0c2VjcmV0dGVzdGE=";
+    private static final String SECRET_KEY_STRING = System.getenv("JWT_TEST_SECRET") != null 
+    ? System.getenv("JWT_TEST_SECRET") 
+    : "clave-de-test-para-unit-tests";
     private static final long EXPIRATION = 3600000L;
 
     private ConcurrentHashMap<String, Date> blacklistMap;
