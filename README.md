@@ -19,7 +19,7 @@ API REST completa para la gestión de una tienda de celulares y accesorios. Desa
 - Registro e inicio de sesión con JWT.
 - Logout con blacklist de tokens.
 - Roles y permisos con Spring Security.
-- Configuración de CORS para comunicação con frontend.
+- Configuración de CORS para comunicación con frontend.
 
 ### 📦 Gestión de Negocio
 - CRUD de clientes.
@@ -62,6 +62,7 @@ La API está protegida con JWT. Los endpoints de escritura (POST, PUT, DELETE) s
 ### Producción (Live en Render)
 La API está desplegada en la nube utilizando **Render**:
 - **URL de Producción:** `https://sintaxis-phone-store-api.onrender.com`
+- **Documentación interactiva:** [Swagger UI](https://sintaxis-phone-store-api.onrender.com/swagger-ui/index.html)
 - **Base de Datos:** PostgreSQL gestionado en la nube (Render).
 - **Infraestructura:** Imagen Docker construida y alojada por Render (con conexión segura SSL a la base de datos).
 - *Nota: Al ser un servicio gratuito, el primer acceso puede tardar unos segundos mientras la instancia se "despierta" (cold start).*
