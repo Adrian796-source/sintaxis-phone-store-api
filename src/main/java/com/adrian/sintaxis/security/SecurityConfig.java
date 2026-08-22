@@ -40,8 +40,7 @@ public class SecurityConfig {
                 "http://localhost:3000",      // React desarrollo
                 "http://localhost:5173",      // Vite desarrollo
                 "http://localhost:4200",      // Angular desarrollo
-                "https://tudominio.com",      // 🔴 REEMPLAZAR CON TU DOMINIO DE PRODUCCIÓN
-                "https://www.tudominio.com"   // 🔴 REEMPLAZAR CON TU DOMINIO DE PRODUCCIÓN
+                "https://sintaxis-phone-store-api.onrender.com",      // 🔴 DOMINIO DE PRODUCCIÓN
         ));
 
         // 🔴 SOLO MÉTODOS HTTP QUE REALMENTE USAS
@@ -87,6 +86,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/").permitAll()
                         // Endpoints públicos de Swagger/OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", 
                                 "/v3/api-docs.yaml", "/webjars/**", "/swagger-resources", "/swagger-resources/**").permitAll()
