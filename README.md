@@ -19,7 +19,7 @@ API REST completa para la gestión de una tienda de celulares y accesorios. Desa
 - Registro e inicio de sesión con JWT.
 - Logout con blacklist de tokens.
 - Roles y permisos con Spring Security.
-- Configuración de CORS para comunicación con frontend.
+- Configuración de CORS para comunicação con frontend.
 
 ### 📦 Gestión de Negocio
 - CRUD de clientes.
@@ -43,6 +43,16 @@ La aplicación cuenta con pruebas unitarias y de integración para garantizar la
 > ```bash
 > mvn test
 > ```
+
+## 🔒 Seguridad
+La API está protegida con JWT. Los endpoints de escritura (POST, PUT, DELETE) son privados y requieren un token con rol **ADMIN** o **EMPLEADO**.
+
+> **Cómo probar la app en local:**
+> 1. Ejecuta el proyecto con el perfil de prueba (H2) para que arranque más rápido.
+> 2. Registra un usuario en `/api/auth/register` (este usuario tendrá rol CLIENTE y solo podrá ver los productos).
+> 3. Para probar las funcionalidades de Admin (crear, editar, borrar), el usuario Admin se crea automáticamente al arrancar la app utilizando las variables de entorno `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
+>
+> **Para el recruiter:** Si bajas este proyecto y lo ejecutas localmente, el Admin se creará con los valores por defecto. En producción, estas variables están configuradas en Render de forma segura, sin exponer la contraseña en GitHub.
 
 ## 🐳 Despliegue
 ### Contenerización

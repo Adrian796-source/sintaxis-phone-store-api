@@ -40,7 +40,7 @@ public class SecurityConfig {
                 "http://localhost:3000",      // React desarrollo
                 "http://localhost:5173",      // Vite desarrollo
                 "http://localhost:4200",      // Angular desarrollo
-                "https://sintaxis-phone-store-api.onrender.com",      // 🔴 DOMINIO DE PRODUCCIÓN
+                "https://sintaxis-phone-store-api.onrender.com"     // 🔴 DOMINIO DE PRODUCCIÓN
         ));
 
         // 🔴 SOLO MÉTODOS HTTP QUE REALMENTE USAS
