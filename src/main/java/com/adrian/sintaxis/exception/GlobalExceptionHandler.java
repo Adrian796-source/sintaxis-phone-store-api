@@ -9,11 +9,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final ZoneId ZONE_ID = ZoneId.of("America/Argentina/Buenos_Aires");
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
@@ -38,7 +41,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
         Map<String, Object> errors = new HashMap<>();
-        errors.put("timestamp", LocalDateTime.now());
+        errors.put("timestamp", LocalDateTime.now(ZONE_ID));
         errors.put("status", HttpStatus.BAD_REQUEST.value());
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
@@ -54,7 +57,7 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now(ZONE_ID));
         body.put("status", status.value());
         body.put("error", message);
         return ResponseEntity.status(status).body(body);
