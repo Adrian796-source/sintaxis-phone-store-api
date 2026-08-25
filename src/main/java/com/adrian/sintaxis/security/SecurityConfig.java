@@ -31,6 +31,11 @@ public class SecurityConfig {
     private static final String CELULARES_PATH = "/api/celulares/**";
     private static final String ACCESORIOS_PATH = "/api/accesorios/**";
 
+    // 🔐 Constantes para roles
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_EMPLEADO = "EMPLEADO";
+    private static final String ROLE_CLIENTE = "CLIENTE";
+
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
@@ -103,21 +108,21 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, CELULARES_PATH).permitAll()
                         .requestMatchers(HttpMethod.GET, ACCESORIOS_PATH).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, CELULARES_PATH).hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.PUT, CELULARES_PATH).hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.DELETE, CELULARES_PATH).hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.POST, CELULARES_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.PUT, CELULARES_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.DELETE, CELULARES_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
 
-                        .requestMatchers(HttpMethod.POST, ACCESORIOS_PATH).hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.PUT, ACCESORIOS_PATH).hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.POST, ACCESORIOS_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.PUT, ACCESORIOS_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
 
                         // Clientes - solo ADMIN
-                        .requestMatchers("/api/clientes/**").hasRole("ADMIN")
+                        .requestMatchers("/api/clientes/**").hasRole(ROLE_ADMIN)
 
                         // Ventas - ADMIN y EMPLEADO, mis-ventas para CLIENTE
-                        .requestMatchers("/api/ventas/mis-ventas").hasRole("CLIENTE")
-                        .requestMatchers("/api/ventas/reportes/**").hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers("/api/ventas/**").hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers("/api/ventas/mis-ventas").hasRole(ROLE_CLIENTE)
+                        .requestMatchers("/api/ventas/reportes/**").hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers("/api/ventas/**").hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
 
                         // Cualquier otro endpoint requiere autenticación
                         .anyRequest().authenticated()
