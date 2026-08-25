@@ -4,6 +4,8 @@ import com.adrian.sintaxis.model.Usuario;
 import com.adrian.sintaxis.model.Rol;
 import com.adrian.sintaxis.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -34,9 +37,9 @@ public class DataInitializer implements CommandLineRunner {
             admin.setRol(Rol.ADMIN);
             admin.setActivo(true);
             usuarioRepository.save(admin);
-            System.out.println("✅ Usuario ADMIN creado exitosamente.");
+            log.info("✅ Usuario ADMIN creado exitosamente.");
         } else {
-            System.out.println("ℹ️ Usuario ADMIN ya existía, no se creó uno nuevo.");
+            log.info("ℹ️ Usuario ADMIN ya existía, no se creó uno nuevo.");
         }
     }
 }
