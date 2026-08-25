@@ -27,6 +27,10 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    // Constantes para rutas de productos
+    private static final String CELULARES_PATH = "/api/celulares/**";
+    private static final String ACCESORIOS_PATH = "/api/accesorios/**";
+
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
@@ -96,14 +100,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/perfil").authenticated()
 
                         // Productos - GET público, modificaciones solo ADMIN y EMPLEADO
-                        .requestMatchers(HttpMethod.GET, "/api/celulares/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/accesorios/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/celulares/**").hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.PUT, "/api/celulares/**").hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.DELETE, "/api/celulares/**").hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.POST, "/api/accesorios/**").hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.PUT, "/api/accesorios/**").hasAnyRole("ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.DELETE, "/api/accesorios/**").hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.GET, CELULARES_PATH).permitAll()
+                        .requestMatchers(HttpMethod.GET, ACCESORIOS_PATH).permitAll()
+
+                        .requestMatchers(HttpMethod.POST, CELULARES_PATH).hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.PUT, CELULARES_PATH).hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.DELETE, CELULARES_PATH).hasAnyRole("ADMIN", "EMPLEADO")
+
+                        .requestMatchers(HttpMethod.POST, ACCESORIOS_PATH).hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.PUT, ACCESORIOS_PATH).hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyRole("ADMIN", "EMPLEADO")
 
                         // Clientes - solo ADMIN
                         .requestMatchers("/api/clientes/**").hasRole("ADMIN")
