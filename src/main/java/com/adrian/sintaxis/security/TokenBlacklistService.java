@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.jsonwebtoken.JwtException;
 
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,7 +55,7 @@ public class TokenBlacklistService {
             log.info("🔴 Token agregado a blacklist. Expira: " + expiration);
             log.info("📊 Blacklist size: " + blacklist.size());
 
-        } catch (Exception e) {
+        } catch (JwtException e) {
             throw new TokenInvalidoException("Token inválido: " + e.getMessage());
         }
     }
