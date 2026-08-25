@@ -1,6 +1,7 @@
 package com.adrian.sintaxis.security;
 
 import com.adrian.sintaxis.config.ConfiguracionJwt;
+import com.adrian.sintaxis.exception.TokenInvalidoException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +55,7 @@ public class TokenBlacklistService {
             log.info("📊 Blacklist size: " + blacklist.size());
 
         } catch (Exception e) {
-            throw new RuntimeException("Token inválido: " + e.getMessage());
+            throw new TokenInvalidoException("Token inválido: " + e.getMessage());
         }
     }
 
