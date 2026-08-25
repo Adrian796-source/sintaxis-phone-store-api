@@ -1,7 +1,6 @@
 package com.adrian.sintaxis.model;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.adrian.sintaxis.exception.StockInsuficienteException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,7 +41,7 @@ public abstract class Producto {
         if (stock >= cantidad) {
             stock -= cantidad;
         } else {
-            throw new RuntimeException("Stock insuficiente");
+            throw new StockInsuficienteException("Stock insuficiente");
         }
     }
 

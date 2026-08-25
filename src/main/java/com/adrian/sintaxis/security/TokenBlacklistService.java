@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,13 +23,15 @@ public class TokenBlacklistService {
     // Almacenamiento en memoria (para producción usar Redis o base de datos)
     private final ConcurrentHashMap<String, Date> blacklist = new ConcurrentHashMap<>();
 
+    private static final Logger log = LoggerFactory.getLogger(TokenBlacklistService.class);
+
     /**
      * Agrega un token a la blacklist
      */
     public void addToBlacklist(String token) {
         // Verificar si la blacklist está habilitada
         if (!configuracionJwt.getBlacklist().isEnabled()) {
-            System.out.println("⚠️ Blacklist deshabilitada. Token no agregado.");
+            log.info("⚠️ Blacklist deshabilitada. Token no agregado.");
             return;
         }
         try {
@@ -46,8 +50,8 @@ public class TokenBlacklistService {
             // Limpiar tokens expirados (opcional pero recomendado)
             cleanExpiredTokens();
 
-            System.out.println("🔴 Token agregado a blacklist. Expira: " + expiration);
-            System.out.println("📊 Blacklist size: " + blacklist.size());
+            log.info("🔴 Token agregado a blacklist. Expira: " + expiration);
+            log.info("📊 Blacklist size: " + blacklist.size());
 
         } catch (Exception e) {
             throw new RuntimeException("Token inválido: " + e.getMessage());
@@ -86,7 +90,7 @@ public class TokenBlacklistService {
         blacklist.entrySet().removeIf(entry -> entry.getValue().before(now));
         int after = blacklist.size();
         if (before != after) {
-            System.out.println("🧹 Blacklist limpiada. Removidos: " + (before - after) + " tokens expirados");
+            log.info("🧹 Blacklist limpiada. Removidos: " + (before - after) + " tokens expirados");
         }
     }
 
@@ -97,7 +101,7 @@ public class TokenBlacklistService {
     public void scheduledCleanup() {
         if (configuracionJwt.getBlacklist().isEnabled()) {
             cleanExpiredTokens();
-            System.out.println("🧹 Limpieza programada completada. Tamaño actual: " + blacklist.size());
+            log.info("🧹 Limpieza programada completada. Tamaño actual: " + blacklist.size());
         }
     }
 
