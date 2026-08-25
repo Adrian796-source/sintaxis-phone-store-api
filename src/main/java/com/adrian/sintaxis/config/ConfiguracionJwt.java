@@ -20,6 +20,6 @@ public class ConfiguracionJwt {
     @Setter
     public static class Blacklist {
         private boolean enabled = true;
-        private Long cleanupInterval = (Long) 3600000L;
+        private Long cleanupInterval = 3600000L;
     }
 }
