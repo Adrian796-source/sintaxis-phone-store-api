@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
 
+    private static final String BEARER = "Bearer";
+
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
@@ -18,10 +20,10 @@ public class SwaggerConfig {
                         .title("Sintaxis Phone Store API")
                         .description("API REST para gestión de tienda de celulares y accesorios")
                         .version("1.0.0"))
-                .addSecurityItem(new SecurityRequirement().addList("Bearer"))
+                .addSecurityItem(new SecurityRequirement().addList(BEARER))
                 .components(new Components()
-                        .addSecuritySchemes("Bearer", new SecurityScheme()
-                                .name("Bearer")
+                        .addSecuritySchemes(BEARER, new SecurityScheme()
+                                .name(BEARER)
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")));
