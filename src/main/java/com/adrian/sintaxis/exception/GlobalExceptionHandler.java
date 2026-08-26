@@ -118,4 +118,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(EmailEnUsoException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailEnUsoException(EmailEnUsoException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(PuntosInvalidosException.class)
+    public ResponseEntity<Map<String, Object>> handlePuntosInvalidosException(PuntosInvalidosException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
 }

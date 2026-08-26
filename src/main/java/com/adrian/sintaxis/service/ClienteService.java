@@ -12,6 +12,8 @@ import com.adrian.sintaxis.repository.VentaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import com.adrian.sintaxis.exception.*;
+import java.time.ZoneId;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -156,10 +158,10 @@ public class ClienteService implements IClienteService {
     @Override
     public ClienteResponseDTO guardar(ClienteRequestDTO dto) {
         if (clienteRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new RuntimeException("Ya existe un cliente con el email: " + dto.getEmail());
+            throw new EmailYaExistenteException("Ya existe un cliente con el email: " + dto.getEmail());
         }
         Cliente cliente = toEntity(dto);
-        cliente.setFechaRegistro(LocalDateTime.now());
+        cliente.setFechaRegistro(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
         cliente.setEsVip(false);
         cliente.setPuntosAcumulados(0);
         cliente.setActivo(true);
@@ -185,7 +187,7 @@ public class ClienteService implements IClienteService {
 
         Optional<Cliente> clienteConEmail = clienteRepository.findByEmail(dto.getEmail());
         if (clienteConEmail.isPresent() && !clienteConEmail.get().getIdCliente().equals(id)) {
-            throw new RuntimeException("El email ya está en uso por otro cliente");
+            throw new EmailEnUsoException("El email ya está en uso por otro cliente");
         }
 
         existente.setNombre(dto.getNombre());
@@ -224,7 +226,7 @@ public class ClienteService implements IClienteService {
     @Override
     public ClienteResponseDTO agregarPuntos(Long id, int puntos) {
         if (puntos <= 0) {
-            throw new RuntimeException("Los puntos deben ser un valor positivo");
+            throw new PuntosInvalidosException("Los puntos deben ser un valor positivo");
         }
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
