@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.adrian.sintaxis.exception.*;
+import java.time.ZoneId;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -33,12 +35,12 @@ public class ProductoService implements IProductoService {
     @Override
     public Producto guardar(Producto producto) {
         if (producto.getPrecio() == null || producto.getPrecio() <= 0) {
-            throw new RuntimeException("El precio debe ser mayor a 0");
+            throw new PrecioInvalidoException("El precio debe ser mayor a 0");
         }
         if (producto.getStock() < 0) {
-            throw new RuntimeException("El stock no puede ser negativo");
+            throw new StockInvalidoException("El stock no puede ser negativo");
         }
-        producto.setFechaAlta(LocalDateTime.now());
+        producto.setFechaAlta(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
         producto.setActivo(true);
         return productoRepository.save(producto);
     }
@@ -58,10 +60,10 @@ public class ProductoService implements IProductoService {
     @Override
     public Producto actualizar(Long id, Producto producto) {
         Producto existente = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new ProductoNoEncontradoException("Producto no encontrado"));
 
         if (producto.getPrecio() == null || producto.getPrecio() <= 0) {
-            throw new RuntimeException("El precio debe ser mayor a 0");
+            throw new PrecioInvalidoException("El precio debe ser mayor a 0");
         }
 
         existente.setNombre(producto.getNombre());
@@ -76,7 +78,7 @@ public class ProductoService implements IProductoService {
     @Override
     public void eliminar(Long id) {
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new ProductoNoEncontradoException("Producto no encontrado"));
         producto.setActivo(false);
         productoRepository.save(producto);
     }
@@ -104,11 +106,11 @@ public class ProductoService implements IProductoService {
     @Override
     public void reducirStock(Long id, int cantidad) {
         if (cantidad <= 0) {
-            throw new RuntimeException("La cantidad debe ser mayor a 0");
+            throw new CantidadInvalidaException("La cantidad debe ser mayor a 0");
         }
 
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new ProductoNoEncontradoException("Producto no encontrado"));
         producto.reducirStock(cantidad);
         productoRepository.save(producto);
     }
@@ -124,7 +126,7 @@ public class ProductoService implements IProductoService {
             // Validar que sea una imagen
             String contentType = imagen.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                throw new RuntimeException("El archivo debe ser una imagen");
+                throw new TipoArchivoInvalidoException("El archivo debe ser una imagen");
             }
 
             // Generar nombre único
@@ -150,7 +152,7 @@ public class ProductoService implements IProductoService {
             return "/api/productos/imagenes/" + nombreArchivo;
 
         } catch (IOException e) {
-            throw new RuntimeException("Error al guardar la imagen: " + e.getMessage(), e);
+            throw new ImagenStorageException("Error al guardar la imagen: " + e.getMessage(), e);
         }
     }
 

@@ -128,4 +128,19 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(ProductoNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> handleProductoNoEncontradoException(ProductoNoEncontradoException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(StockInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleStockInvalidoException(StockInvalidoException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(TipoArchivoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleTipoArchivoInvalidoException(TipoArchivoInvalidoException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
 }
