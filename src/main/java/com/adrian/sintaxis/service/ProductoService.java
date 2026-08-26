@@ -53,6 +53,10 @@ public class ProductoService implements IProductoService {
         return dto;
     }
 
+    private List<ProductoResponseDTO> toDTOList(List<Producto> productos) {
+        return productos.stream().map(this::toDTO).toList();
+    }
+
     @Override
     public Optional<ProductoResponseDTO> buscarPorId(Long id) {
         return Optional.of(productoRepository.findById(id)
@@ -65,24 +69,28 @@ public class ProductoService implements IProductoService {
         return productoRepository.findAll().stream().map(this::toDTO).toList();
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public List<ProductoResponseDTO> buscarPorCategoria(String categoria) {
-        return productoRepository.findByCategoria(categoria).stream().map(this::toDTO).toList();
+        return toDTOList(productoRepository.findByCategoria(categoria));
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public List<ProductoResponseDTO> buscarPorMarca(String marca) {
-        return productoRepository.findByMarca(marca).stream().map(this::toDTO).toList();
+        return toDTOList(productoRepository.findByMarca(marca));
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public List<ProductoResponseDTO> listarActivos() {
-        return productoRepository.findByActivoTrue().stream().map(this::toDTO).toList();
+        return toDTOList(productoRepository.findByActivoTrue());
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public List<ProductoResponseDTO> listarConStock() {
-        return productoRepository.findByStockGreaterThan(0).stream().map(this::toDTO).toList();
+        return toDTOList(productoRepository.findByStockGreaterThan(0));
     }
 
     @Override
