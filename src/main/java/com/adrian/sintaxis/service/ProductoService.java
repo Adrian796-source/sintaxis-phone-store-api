@@ -1,5 +1,6 @@
 package com.adrian.sintaxis.service;
 
+import com.adrian.sintaxis.dto.ProductoResponseDTO;
 import com.adrian.sintaxis.model.Producto;
 import com.adrian.sintaxis.repository.ProductoRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,14 +11,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.adrian.sintaxis.exception.*;
-import java.time.ZoneId;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,79 +30,59 @@ public class ProductoService implements IProductoService {
 
     private final ProductoRepository productoRepository;
 
+    private static final Logger log = LoggerFactory.getLogger(ProductoService.class);
+
     //####### Aca agrego anotation para traer las imagenes
     @Value("${upload.path:uploads/}")
     private String uploadPath;
 
-    @Override
-    public Producto guardar(Producto producto) {
-        if (producto.getPrecio() == null || producto.getPrecio() <= 0) {
-            throw new PrecioInvalidoException("El precio debe ser mayor a 0");
-        }
-        if (producto.getStock() < 0) {
-            throw new StockInvalidoException("El stock no puede ser negativo");
-        }
-        producto.setFechaAlta(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
-        producto.setActivo(true);
-        return productoRepository.save(producto);
+    // Método de conversión Producto -> ProductoResponseDTO
+    private ProductoResponseDTO toDTO(Producto producto) {
+        ProductoResponseDTO dto = new ProductoResponseDTO();
+        dto.setIdProducto(producto.getIdProducto());
+        dto.setNombre(producto.getNombre());
+        dto.setDescripcion(producto.getDescripcion());
+        dto.setPrecio(producto.getPrecio());
+        dto.setStock(producto.getStock());
+        dto.setStockMinimo(producto.getStockMinimo());
+        dto.setMarca(producto.getMarca());
+        dto.setCategoria(producto.getCategoria());
+        dto.setFechaAlta(producto.getFechaAlta());
+        dto.setActivo(producto.isActivo());
+        dto.setImagenUrl(producto.getImagenUrl());
+        return dto;
     }
 
     @Override
-    public Optional<Producto> buscarPorId(Long id) {
-
-        return productoRepository.findById(id);
+    public Optional<ProductoResponseDTO> buscarPorId(Long id) {
+        return Optional.of(productoRepository.findById(id)
+                .map(this::toDTO)
+                .orElseThrow(() -> new ProductoNoEncontradoException("Producto no encontrado")));
     }
 
     @Override
-    public List<Producto> listarTodos() {
-
-        return productoRepository.findAll();
+    public List<ProductoResponseDTO> listarTodos() {
+        return productoRepository.findAll().stream().map(this::toDTO).toList();
     }
 
     @Override
-    public Producto actualizar(Long id, Producto producto) {
-        Producto existente = productoRepository.findById(id)
-                .orElseThrow(() -> new ProductoNoEncontradoException("Producto no encontrado"));
-
-        if (producto.getPrecio() == null || producto.getPrecio() <= 0) {
-            throw new PrecioInvalidoException("El precio debe ser mayor a 0");
-        }
-
-        existente.setNombre(producto.getNombre());
-        existente.setDescripcion(producto.getDescripcion());
-        existente.setPrecio(producto.getPrecio());
-        existente.setStock(producto.getStock());
-        existente.setMarca(producto.getMarca());
-        existente.setCategoria(producto.getCategoria());
-        return productoRepository.save(existente);
+    public List<ProductoResponseDTO> buscarPorCategoria(String categoria) {
+        return productoRepository.findByCategoria(categoria).stream().map(this::toDTO).toList();
     }
 
     @Override
-    public void eliminar(Long id) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new ProductoNoEncontradoException("Producto no encontrado"));
-        producto.setActivo(false);
-        productoRepository.save(producto);
+    public List<ProductoResponseDTO> buscarPorMarca(String marca) {
+        return productoRepository.findByMarca(marca).stream().map(this::toDTO).toList();
     }
 
     @Override
-    public List<Producto> buscarPorCategoria(String categoria) {
-        return productoRepository.findByCategoria(categoria);
+    public List<ProductoResponseDTO> listarActivos() {
+        return productoRepository.findByActivoTrue().stream().map(this::toDTO).toList();
     }
 
     @Override
-    public List<Producto> buscarPorMarca(String marca) {
-        return productoRepository.findByMarca(marca);
-    }
-
-    @Override
-    public List<Producto> listarActivos() {
-        return productoRepository.findByActivoTrue();
-    }
-
-    @Override
-    public List<Producto> listarConStock() {
-        return productoRepository.findByStockGreaterThan(0);
+    public List<ProductoResponseDTO> listarConStock() {
+        return productoRepository.findByStockGreaterThan(0).stream().map(this::toDTO).toList();
     }
 
     @Override
@@ -176,12 +158,10 @@ public class ProductoService implements IProductoService {
             } else {
                 return ResponseEntity.notFound().build();
             }
-
-        } catch (MalformedURLException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            log.error("Error al obtener la imagen: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
+
     }
 }
-
