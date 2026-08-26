@@ -2,7 +2,7 @@ package com.adrian.sintaxis.service;
 
 import com.adrian.sintaxis.dto.AccesorioRequestDTO;
 import com.adrian.sintaxis.dto.AccesorioResponseDTO;
-import com.adrian.sintaxis.exception.ResourceNotFoundException;
+import com.adrian.sintaxis.exception.*;
 import com.adrian.sintaxis.model.Accesorio;
 import com.adrian.sintaxis.repository.AccesorioRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.ZoneId;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -75,14 +76,14 @@ public class AccesorioService implements IAccesorioService {
     @Override
     public AccesorioResponseDTO guardar(AccesorioRequestDTO dto, MultipartFile imagen) {
         if (dto.getPrecio() == null || dto.getPrecio() <= 0) {
-            throw new RuntimeException("El precio debe ser mayor a 0");
+            throw new PrecioInvalidoException("El precio debe ser mayor a 0");
         }
         if (dto.getTipoAccesorio() == null || dto.getTipoAccesorio().isBlank()) {
-            throw new RuntimeException("El tipo de accesorio es obligatorio");
+            throw new TipoAccesorioObligatorioException("El tipo de accesorio es obligatorio");
         }
 
         Accesorio accesorio = toEntity(dto);
-        accesorio.setFechaAlta(LocalDateTime.now());
+        accesorio.setFechaAlta(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
         accesorio.setActivo(true);
 
         // ✅ Guardar imagen si viene
@@ -124,7 +125,7 @@ public class AccesorioService implements IAccesorioService {
             return "/api/productos/imagenes/" + nombreArchivo;
 
         } catch (IOException e) {
-            throw new RuntimeException("Error al guardar la imagen: " + e.getMessage(), e);
+            throw new ImagenStorageException("Error al guardar la imagen: " + e.getMessage(), e);
         }
     }
 
@@ -148,7 +149,7 @@ public class AccesorioService implements IAccesorioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Accesorio no encontrado con id: " + id));
 
         if (dto.getPrecio() == null || dto.getPrecio() <= 0) {
-            throw new RuntimeException("El precio debe ser mayor a 0");
+            throw new PrecioInvalidoException("El precio debe ser mayor a 0");
         }
 
         existente.setNombre(dto.getNombre());
@@ -188,7 +189,7 @@ public class AccesorioService implements IAccesorioService {
 
     @Override
     public AccesorioResponseDTO reponerStock(Long id, int cantidad) {
-        if (cantidad <= 0) throw new RuntimeException("La cantidad debe ser mayor a 0");
+        if (cantidad <= 0) throw new CantidadInvalidaException("La cantidad debe ser mayor a 0");
         Accesorio accesorio = accesorioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Accesorio no encontrado con id: " + id));
         accesorio.setStock(accesorio.getStock() + cantidad);
