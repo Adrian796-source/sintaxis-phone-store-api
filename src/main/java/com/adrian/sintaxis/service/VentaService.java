@@ -19,8 +19,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.adrian.sintaxis.exception.*;
+import java.time.ZoneId;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,10 +75,10 @@ public class VentaService implements IVentaService {
     @Override
     public VentaResponseDTO guardar(VentaRequestDTO dto) {
         if (!ESTADOS_VALIDOS.contains(dto.getEstado())) {
-            throw new RuntimeException("Estado inválido. Los estados válidos son: " + ESTADOS_VALIDOS);
+            throw new EstadoInvalidoException("Estado inválido. Los estados válidos son: " + ESTADOS_VALIDOS);
         }
         if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
-            throw new RuntimeException("La venta debe tener al menos un producto");
+            throw new VentaSinDetallesException("La venta debe tener al menos un producto");
         }
 
         Cliente cliente = clienteRepository.findById(dto.getIdCliente())
@@ -87,7 +88,7 @@ public class VentaService implements IVentaService {
         venta.setCliente(cliente);
         venta.setEstado(dto.getEstado());
         venta.setMetodoPago(dto.getMetodoPago());
-        venta.setFecha(LocalDateTime.now());
+        venta.setFecha(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
         venta.setActivo(true);
 
         // ✅ VALIDAR STOCK ANTES DE PROCESAR LA VENTA
@@ -96,7 +97,7 @@ public class VentaService implements IVentaService {
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + d.getIdProducto()));
             
             if (producto.getStock() < d.getCantidad()) {
-                throw new RuntimeException(
+                throw new StockInsuficienteException(
                     String.format("Stock insuficiente para '%s'. Disponible: %d, Solicitado: %d",
                         producto.getNombre(), producto.getStock(), d.getCantidad())
                 );
@@ -156,7 +157,7 @@ public class VentaService implements IVentaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + id));
 
         if ("Cancelada".equals(existente.getEstado())) {
-            throw new RuntimeException("No se puede modificar una venta cancelada");
+            throw new VentaCanceladaException("No se puede modificar una venta cancelada");
         }
 
         existente.setMetodoPago(dto.getMetodoPago());
@@ -181,7 +182,7 @@ public class VentaService implements IVentaService {
         return usuarioRepository.findByEmail(email)
                 .map(usuario -> {
                     if (usuario.getCliente() == null) {
-                        throw new RuntimeException("El usuario no tiene un cliente asociado");
+                        throw new UsuarioSinClienteException("El usuario no tiene un cliente asociado");
                     }
                     return ventaRepository.findByClienteIdCliente(usuario.getCliente().getIdCliente())
                             .stream().map(this::toDTO).toList();
@@ -191,7 +192,7 @@ public class VentaService implements IVentaService {
 
     @Override
     public Double totalRecaudado(LocalDateTime desde, LocalDateTime hasta) {
-        if (desde.isAfter(hasta)) throw new RuntimeException("La fecha 'desde' no puede ser posterior a 'hasta'");
+        if (desde.isAfter(hasta)) throw new FechasInvalidasException("La fecha 'desde' no puede ser posterior a 'hasta'");
         return ventaRepository.totalRecaudadoEntreFechas(desde, hasta);
     }
 
@@ -219,7 +220,7 @@ public class VentaService implements IVentaService {
     @Override
     public List<VentaResponseDTO> buscarPorEstado(String estado) {
         if (!ESTADOS_VALIDOS.contains(estado)) {
-            throw new RuntimeException("Estado inválido. Los estados válidos son: " + ESTADOS_VALIDOS);
+            throw new EstadoInvalidoException("Estado inválido. Los estados válidos son: " + ESTADOS_VALIDOS);
         }
         return ventaRepository.findByEstado(estado).stream().map(this::toDTO).toList();
     }
@@ -227,7 +228,7 @@ public class VentaService implements IVentaService {
     @Override
     public List<VentaResponseDTO> buscarPorRangoFechas(LocalDateTime desde, LocalDateTime hasta) {
         if (desde.isAfter(hasta)) {
-            throw new RuntimeException("La fecha 'desde' no puede ser posterior a 'hasta'");
+            throw new FechasInvalidasException("La fecha 'desde' no puede ser posterior a 'hasta'");
         }
         return ventaRepository.findByFechaBetween(desde, hasta).stream().map(this::toDTO).toList();
     }
@@ -235,13 +236,13 @@ public class VentaService implements IVentaService {
     @Override
     public VentaResponseDTO cambiarEstado(Long id, String nuevoEstado) {
         if (!ESTADOS_VALIDOS.contains(nuevoEstado)) {
-            throw new RuntimeException("Estado inválido. Los estados válidos son: " + ESTADOS_VALIDOS);
+            throw new EstadoInvalidoException("Estado inválido. Los estados válidos son: " + ESTADOS_VALIDOS);
         }
         Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + id));
 
         if ("Cancelada".equals(venta.getEstado())) {
-            throw new RuntimeException("No se puede cambiar el estado de una venta cancelada");
+            throw new VentaCanceladaException("No se puede cambiar el estado de una venta cancelada");
         }
 
         String estadoAnterior = venta.getEstado();

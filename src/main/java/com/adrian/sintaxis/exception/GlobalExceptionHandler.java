@@ -143,4 +143,29 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(EstadoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleEstadoInvalidoException(EstadoInvalidoException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(VentaSinDetallesException.class)
+    public ResponseEntity<Map<String, Object>> handleVentaSinDetallesException(VentaSinDetallesException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(VentaCanceladaException.class)
+    public ResponseEntity<Map<String, Object>> handleVentaCanceladaException(VentaCanceladaException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(UsuarioSinClienteException.class)
+    public ResponseEntity<Map<String, Object>> handleUsuarioSinClienteException(UsuarioSinClienteException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(FechasInvalidasException.class)
+    public ResponseEntity<Map<String, Object>> handleFechasInvalidasException(FechasInvalidasException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
 }
