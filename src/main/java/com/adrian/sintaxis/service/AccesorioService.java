@@ -28,6 +28,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccesorioService implements IAccesorioService {
 
+    // Constante para el mensaje de error de recurso no encontrado
+    private static final String ACCESORIO_NO_ENCONTRADO = "Accesorio no encontrado con id: ";
     private final AccesorioRepository accesorioRepository;
 
     private AccesorioResponseDTO toDTO(Accesorio accesorio) {
@@ -135,7 +137,7 @@ public class AccesorioService implements IAccesorioService {
     public Optional<AccesorioResponseDTO> buscarPorId(Long id) {
         return Optional.of(accesorioRepository.findById(id)
                 .map(this::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Accesorio no encontrado con id: " + id)));
+                .orElseThrow(() -> new ResourceNotFoundException(ACCESORIO_NO_ENCONTRADO + id)));
     }
 
     @Override
@@ -146,7 +148,7 @@ public class AccesorioService implements IAccesorioService {
     @Override
     public AccesorioResponseDTO actualizar(Long id, AccesorioRequestDTO dto) {
         Accesorio existente = accesorioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Accesorio no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ACCESORIO_NO_ENCONTRADO + id));
 
         if (dto.getPrecio() == null || dto.getPrecio() <= 0) {
             throw new PrecioInvalidoException("El precio debe ser mayor a 0");
@@ -168,7 +170,7 @@ public class AccesorioService implements IAccesorioService {
     @Override
     public void eliminar(Long id) {
         Accesorio accesorio = accesorioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Accesorio no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ACCESORIO_NO_ENCONTRADO + id));
         accesorio.setActivo(false);
         accesorioRepository.save(accesorio);
     }
@@ -191,7 +193,7 @@ public class AccesorioService implements IAccesorioService {
     public AccesorioResponseDTO reponerStock(Long id, int cantidad) {
         if (cantidad <= 0) throw new CantidadInvalidaException("La cantidad debe ser mayor a 0");
         Accesorio accesorio = accesorioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Accesorio no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ACCESORIO_NO_ENCONTRADO + id));
         accesorio.setStock(accesorio.getStock() + cantidad);
         return toDTO(accesorioRepository.save(accesorio));
     }
