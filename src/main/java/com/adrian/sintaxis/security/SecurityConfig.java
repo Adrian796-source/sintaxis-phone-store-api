@@ -89,6 +89,7 @@ public class SecurityConfig {
 
 
     @Bean
+    @SuppressWarnings("SpringSecurityCsrfDisabled")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // CSRF desactivado porque la API es STATELESS y usa JWT en el header Authorization.
