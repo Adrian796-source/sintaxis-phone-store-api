@@ -13,6 +13,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.adrian.sintaxis.exception.*;
+import java.time.ZoneId;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -85,17 +87,17 @@ public class CelularService implements ICelularService {
     public CelularResponseDTO guardar(CelularRequestDTO dto, MultipartFile imagen) {
         // Validaciones
         if (dto.getPrecio() == null || dto.getPrecio() <= 0) {
-            throw new RuntimeException("El precio debe ser mayor a 0");
+            throw new PrecioInvalidoException("El precio debe ser mayor a 0");
         }
         if (dto.getAlmacenamientoGB() <= 0) {
-            throw new RuntimeException("El almacenamiento debe ser mayor a 0");
+            throw new ValoresInvalidosException("El almacenamiento debe ser mayor a 0");
         }
         if (dto.getBateriaMAh() <= 0) {
-            throw new RuntimeException("La batería debe ser mayor a 0");
+            throw new ValoresInvalidosException("La batería debe ser mayor a 0");
         }
 
         Celular celular = toEntity(dto);
-        celular.setFechaAlta(LocalDateTime.now());
+        celular.setFechaAlta(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
         celular.setActivo(true);
 
         // ✅ GUARDAR LA IMAGEN SI VIENE
@@ -136,7 +138,7 @@ public class CelularService implements ICelularService {
             return "/api/productos/imagenes/" + nombreArchivo;
 
         } catch (IOException e) {
-            throw new RuntimeException("Error al guardar la imagen: " + e.getMessage(), e);
+            throw new ImagenStorageException("Error al guardar la imagen: " + e.getMessage(), e);
         }
     }
 
@@ -159,7 +161,7 @@ public class CelularService implements ICelularService {
                 .orElseThrow(() -> new ResourceNotFoundException("Celular no encontrado con id: " + id));
 
         if (dto.getPrecio() == null || dto.getPrecio() <= 0) {
-            throw new RuntimeException("El precio debe ser mayor a 0");
+            throw new PrecioInvalidoException("El precio debe ser mayor a 0");
         }
 
         existente.setNombre(dto.getNombre());
@@ -203,7 +205,7 @@ public class CelularService implements ICelularService {
 
     @Override
     public CelularResponseDTO reponerStock(Long id, int cantidad) {
-        if (cantidad <= 0) throw new RuntimeException("La cantidad debe ser mayor a 0");
+        if (cantidad <= 0) throw new CantidadInvalidaException("La cantidad debe ser mayor a 0");
         Celular celular = celularRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Celular no encontrado con id: " + id));
         celular.setStock(celular.getStock() + cantidad);
@@ -235,7 +237,7 @@ public class CelularService implements ICelularService {
     @Override
     public List<CelularResponseDTO> buscarPorRangoAlmacenamiento(int minGB, int maxGB) {
         if (minGB > maxGB) {
-            throw new RuntimeException("El mínimo no puede ser mayor al máximo");
+            throw new ValoresInvalidosException("El mínimo no puede ser mayor al máximo");
         }
         return celularRepository.findByAlmacenamientoGBBetween(minGB, maxGB).stream().map(this::toDTO).toList();
     }

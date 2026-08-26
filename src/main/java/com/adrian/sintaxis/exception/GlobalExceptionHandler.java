@@ -113,4 +113,9 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(ValoresInvalidosException.class)
+    public ResponseEntity<Map<String, Object>> handleValoresInvalidosException(ValoresInvalidosException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
 }
