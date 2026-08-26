@@ -18,6 +18,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.adrian.sintaxis.exception.*;
+import java.time.ZoneId;
 import java.time.LocalDateTime;  // 🔴 IMPORT NUEVO
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,7 +39,7 @@ public class AuthService {
 
     public LogoutResponseDTO logout(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new RuntimeException("Token no válido");
+            throw new UsuarioNoEncontradoException("Token no válido");
         }
 
         String token = authHeader.substring(7);
@@ -54,7 +56,7 @@ public class AuthService {
     @Transactional
     public AuthResponseDTO register(@Valid RegisterRequestDTO dto) {
         if (usuarioRepository.existsByEmail(dto.getEmail())) {
-            throw new RuntimeException("Ya existe un usuario con ese email");
+            throw new EmailYaExistenteException("Ya existe un usuario con ese email");
         }
 
         // 2. VALIDAR QUE EL ROL SEA VÁLIDO
@@ -62,7 +64,7 @@ public class AuthService {
         try {
             rol = Rol.valueOf(dto.getRol().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Rol inválido. Los valores permitidos son: ADMIN, EMPLEADO, CLIENTE");
+            throw new RolInvalidoException("Rol inválido. Los valores permitidos son: ADMIN, EMPLEADO, CLIENTE");
         }
 
         Usuario usuario = new Usuario();
@@ -75,12 +77,12 @@ public class AuthService {
         //  Si NO viene idCliente, CREAR CLIENTE AUTOMÁTICAMENTE
         if (dto.getIdCliente() != null) {
             Cliente cliente = clienteRepository.findById(dto.getIdCliente())
-                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + dto.getIdCliente()));
+                    .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con id: " + dto.getIdCliente()));
             usuario.setCliente(cliente);
 
             // Validar que el cliente no tenga ya un usuario asociado
             if (cliente.getUsuario() != null) {
-                throw new RuntimeException("El cliente ya está asociado a un usuario");
+                throw new ClienteYaAsociadoException("El cliente ya está asociado a un usuario");
             }
         } else {
             // Crear cliente automático con los datos del usuario
@@ -90,7 +92,7 @@ public class AuthService {
             nuevoCliente.setEmail(dto.getEmail());
             nuevoCliente.setTelefono(dto.getTelefono() != null ? dto.getTelefono() : "");
             nuevoCliente.setDireccion(dto.getDireccion() != null ? dto.getDireccion() : "");
-            nuevoCliente.setFechaRegistro(LocalDateTime.now());
+            nuevoCliente.setFechaRegistro(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
             nuevoCliente.setEsVip(false);
             nuevoCliente.setPuntosAcumulados(0);
             nuevoCliente.setActivo(true);
@@ -110,10 +112,10 @@ public class AuthService {
 
     public void cambiarPassword(String email, CambiarPasswordDTO dto) {
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
 
         if (!passwordEncoder.matches(dto.getPasswordActual(), usuario.getPassword())) {
-            throw new RuntimeException("La contraseña actual es incorrecta");
+            throw new PasswordIncorrectaException("La contraseña actual es incorrecta");
         }
 
         usuario.setPassword(passwordEncoder.encode(dto.getPasswordNueva()));
@@ -122,7 +124,7 @@ public class AuthService {
 
     public PerfilResponseDTO perfil(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
 
         PerfilResponseDTO dto = new PerfilResponseDTO();
         dto.setIdUsuario(usuario.getIdUsuario());
@@ -152,7 +154,7 @@ public class AuthService {
         String token = jwtService.generarToken(userDetails);
 
         Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
 
         // Devolver respuesta con datos del cliente
         return buildAuthResponse(token, usuario);
@@ -163,10 +165,10 @@ public class AuthService {
     @Transactional
     public void asociarCliente(Long idUsuario, Long idCliente) {
         Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + idUsuario));
+                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado con id: " + idUsuario));
 
         Cliente cliente = clienteRepository.findById(idCliente)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + idCliente));
+                .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con id: " + idCliente));
 
         // Si el usuario ya tiene un cliente, lo reemplaza
         usuario.setCliente(cliente);
