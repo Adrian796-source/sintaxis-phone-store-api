@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
 
+    // Constante para el mensaje de error de usuario no encontrado
+    private static final String USUARIO_NO_ENCONTRADO = "Usuario no encontrado";
     private final UsuarioRepository usuarioRepository;
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
@@ -112,7 +114,7 @@ public class AuthService {
 
     public void cambiarPassword(String email, CambiarPasswordDTO dto) {
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO));
 
         if (!passwordEncoder.matches(dto.getPasswordActual(), usuario.getPassword())) {
             throw new PasswordIncorrectaException("La contraseña actual es incorrecta");
@@ -124,7 +126,7 @@ public class AuthService {
 
     public PerfilResponseDTO perfil(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO));
 
         PerfilResponseDTO dto = new PerfilResponseDTO();
         dto.setIdUsuario(usuario.getIdUsuario());
@@ -154,7 +156,7 @@ public class AuthService {
         String token = jwtService.generarToken(userDetails);
 
         Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO));
 
         // Devolver respuesta con datos del cliente
         return buildAuthResponse(token, usuario);
