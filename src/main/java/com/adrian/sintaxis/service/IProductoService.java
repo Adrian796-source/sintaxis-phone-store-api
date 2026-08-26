@@ -1,5 +1,6 @@
 package com.adrian.sintaxis.service;
 
+import com.adrian.sintaxis.dto.ProductoResponseDTO;
 import com.adrian.sintaxis.model.Producto;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
@@ -10,16 +11,12 @@ import java.util.Optional;
 
 public interface IProductoService {
 
-    Producto guardar(Producto producto);
-    Optional<Producto> buscarPorId(Long id);
-    List<Producto> listarTodos();
-    Producto actualizar(Long id, Producto producto);
-    void eliminar(Long id);
-
-    List<Producto> buscarPorCategoria(String categoria);
-    List<Producto> buscarPorMarca(String marca);
-    List<Producto> listarActivos();
-    List<Producto> listarConStock();
+    Optional<ProductoResponseDTO> buscarPorId(Long id);
+    List<ProductoResponseDTO> listarTodos();
+    List<ProductoResponseDTO> buscarPorCategoria(String categoria);
+    List<ProductoResponseDTO> buscarPorMarca(String marca);
+    List<ProductoResponseDTO> listarActivos();
+    List<ProductoResponseDTO> listarConStock();
     void reducirStock(Long id, int cantidad);
 
     //####### Aca agrego un metodo para guardar imagenes del producto
