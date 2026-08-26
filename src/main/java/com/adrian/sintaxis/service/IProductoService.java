@@ -1,7 +1,6 @@
 package com.adrian.sintaxis.service;
 
 import com.adrian.sintaxis.dto.ProductoResponseDTO;
-import com.adrian.sintaxis.model.Producto;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
