@@ -18,19 +18,34 @@ public class GlobalExceptionHandler {
 
     private static final ZoneId ZONE_ID = ZoneId.of("America/Argentina/Buenos_Aires");
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+    @ExceptionHandler(PrecioInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handlePrecioInvalidoException(PrecioInvalidoException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(CantidadInvalidaException.class)
+    public ResponseEntity<Map<String, Object>> handleCantidadInvalidaException(CantidadInvalidaException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(TipoAccesorioObligatorioException.class)
+    public ResponseEntity<Map<String, Object>> handleTipoAccesorioObligatorioException(TipoAccesorioObligatorioException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(ImagenStorageException.class)
+    public ResponseEntity<Map<String, Object>> handleImagenStorageException(ImagenStorageException ex) {
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    @ExceptionHandler(StockInsuficienteException.class)
+    public ResponseEntity<Map<String, Object>> handleStockInsuficienteException(StockInsuficienteException ex) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
-    }
-
-    @ExceptionHandler(StockInsuficienteException.class)
-    public ResponseEntity<Map<String, Object>> handleStockInsuficienteException(StockInsuficienteException ex) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
