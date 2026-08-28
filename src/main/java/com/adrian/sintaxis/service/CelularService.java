@@ -29,6 +29,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CelularService implements ICelularService {
 
+
+    // Constante para el mensaje de error de recurso no encontrado
+    private static final String CELULAR_NO_ENCONTRADO = "Celular no encontrado con id: ";
+
     private final CelularRepository celularRepository;
 
     private CelularResponseDTO toDTO(Celular celular) {
@@ -147,7 +151,7 @@ public class CelularService implements ICelularService {
     public Optional<CelularResponseDTO> buscarPorId(Long id) {
         return Optional.of(celularRepository.findById(id)
                 .map(this::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Celular no encontrado con id: " + id)));
+                .orElseThrow(() -> new ResourceNotFoundException(CELULAR_NO_ENCONTRADO + id)));
     }
 
     @Override
@@ -158,7 +162,7 @@ public class CelularService implements ICelularService {
     @Override
     public CelularResponseDTO actualizar(Long id, CelularRequestDTO dto) {
         Celular existente = celularRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Celular no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CELULAR_NO_ENCONTRADO + id));
 
         if (dto.getPrecio() == null || dto.getPrecio() <= 0) {
             throw new PrecioInvalidoException("El precio debe ser mayor a 0");
@@ -184,7 +188,7 @@ public class CelularService implements ICelularService {
     @Override
     public void eliminar(Long id) {
         Celular celular = celularRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Celular no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException( CELULAR_NO_ENCONTRADO + id));
         celular.setActivo(false);
         celularRepository.save(celular);
     }
@@ -207,7 +211,7 @@ public class CelularService implements ICelularService {
     public CelularResponseDTO reponerStock(Long id, int cantidad) {
         if (cantidad <= 0) throw new CantidadInvalidaException("La cantidad debe ser mayor a 0");
         Celular celular = celularRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Celular no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CELULAR_NO_ENCONTRADO + id));
         celular.setStock(celular.getStock() + cantidad);
         return toDTO(celularRepository.save(celular));
     }
