@@ -5,6 +5,9 @@ import com.adrian.sintaxis.dto.DetalleVentaResponseDTO;
 import com.adrian.sintaxis.dto.ReporteVentaDTO;
 import com.adrian.sintaxis.dto.VentaRequestDTO;
 import com.adrian.sintaxis.dto.VentaResponseDTO;
+import com.adrian.sintaxis.exception.EstadoInvalidoException;
+import com.adrian.sintaxis.exception.GlobalExceptionHandler;
+import com.adrian.sintaxis.exception.VentaCanceladaException;
 import com.adrian.sintaxis.security.JwtService;
 import com.adrian.sintaxis.security.TokenBlacklistService;
 import com.adrian.sintaxis.service.IVentaService;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -37,6 +41,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(VentaController.class)
+@Import(GlobalExceptionHandler.class)
 @AutoConfigureMockMvc(addFilters = false)
 class VentaControllerTest {
 
@@ -254,7 +259,7 @@ class VentaControllerTest {
     @Test
     void actualizar_ShouldReturnBadRequest_WhenDoesNotExist() throws Exception {
         when(ventaService.actualizar(eq(99L), any(VentaRequestDTO.class)))
-                .thenThrow(new RuntimeException("Venta no encontrada"));
+                .thenThrow(new VentaCanceladaException("Venta no encontrada"));
 
         mockMvc.perform(put("/api/ventas/99")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -274,7 +279,7 @@ class VentaControllerTest {
 
     @Test
     void eliminar_ShouldReturnBadRequest_WhenDoesNotExist() throws Exception {
-        doThrow(new RuntimeException("Venta no encontrada")).when(ventaService).eliminar(99L);
+        doThrow(new VentaCanceladaException("Venta no encontrada")).when(ventaService).eliminar(99L);
 
         mockMvc.perform(delete("/api/ventas/99"))
                 .andExpect(status().isBadRequest());
@@ -364,7 +369,7 @@ class VentaControllerTest {
     void cambiarEstado_ShouldReturnBadRequest_WhenEstadoIsInvalid() throws Exception {
         // 🔥 FIX: Simular que el servicio lanza IllegalArgumentException para estado inválido
         when(ventaService.cambiarEstado(eq(1L), eq("INVALIDO")))
-                .thenThrow(new IllegalArgumentException("Estado inválido: INVALIDO"));
+                .thenThrow(new EstadoInvalidoException("Estado inválido: INVALIDO"));
 
         mockMvc.perform(patch("/api/ventas/1/estado")
                         .param("estado", "INVALIDO"))
@@ -374,7 +379,7 @@ class VentaControllerTest {
     @Test
     void cambiarEstado_ShouldReturnBadRequest_WhenVentaDoesNotExist() throws Exception {
         when(ventaService.cambiarEstado(99L, "CONFIRMADO"))
-                .thenThrow(new RuntimeException("Venta no encontrada"));
+                .thenThrow(new VentaCanceladaException("Venta no encontrada"));
 
         mockMvc.perform(patch("/api/ventas/99/estado")
                         .param("estado", "CONFIRMADO"))

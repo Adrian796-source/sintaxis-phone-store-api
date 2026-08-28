@@ -2,6 +2,8 @@ package com.adrian.sintaxis.controller;
 
 import com.adrian.sintaxis.dto.CelularRequestDTO;
 import com.adrian.sintaxis.dto.CelularResponseDTO;
+import com.adrian.sintaxis.exception.GlobalExceptionHandler;
+import com.adrian.sintaxis.exception.ProductoNoEncontradoException;
 import com.adrian.sintaxis.security.JwtService;
 import com.adrian.sintaxis.security.TokenBlacklistService;
 import com.adrian.sintaxis.service.ICelularService;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -31,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CelularController.class)
+@Import(GlobalExceptionHandler.class)
 @AutoConfigureMockMvc(addFilters = false)
 class CelularControllerTest {
 
@@ -231,12 +235,12 @@ class CelularControllerTest {
     @Test
     void actualizar_ShouldReturnNotFound_WhenDoesNotExist() throws Exception {
         when(celularService.actualizar(eq(99L), any(CelularRequestDTO.class)))
-                .thenThrow(new RuntimeException("Celular no encontrado"));
+                .thenThrow(new ProductoNoEncontradoException("Celular no encontrado"));
 
         mockMvc.perform(put("/api/celulares/99")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(celularRequestDTO)))
-                .andExpect(status().isBadRequest());  // 🔥 Cambiado: 400 en lugar de 404
+                .andExpect(status().isNotFound());
     }
     // ==================== TESTS DELETE ====================
 

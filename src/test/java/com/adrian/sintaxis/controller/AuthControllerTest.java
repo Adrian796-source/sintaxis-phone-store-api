@@ -3,6 +3,9 @@ package com.adrian.sintaxis.controller;
 import com.adrian.sintaxis.dto.AuthResponseDTO;
 import com.adrian.sintaxis.dto.LoginRequestDTO;
 import com.adrian.sintaxis.dto.RegisterRequestDTO;
+import com.adrian.sintaxis.exception.EmailYaExistenteException;
+import com.adrian.sintaxis.exception.GlobalExceptionHandler;
+import com.adrian.sintaxis.exception.RolInvalidoException;
 import com.adrian.sintaxis.security.JwtService;
 import com.adrian.sintaxis.security.TokenBlacklistService;
 import com.adrian.sintaxis.service.AuthService;
@@ -12,7 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
+@Import(GlobalExceptionHandler.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
@@ -85,12 +91,12 @@ class AuthControllerTest {
     @Test
     void login_ShouldReturnBadRequest_WhenCredentialsAreInvalid() throws Exception {
         when(authService.login(any(LoginRequestDTO.class)))
-                .thenThrow(new RuntimeException("Credenciales inválidas"));
+                .thenThrow(new BadCredentialsException("Credenciales inválidas"));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());  // 🔥 CAMBIADO: 401 en lugar de 400
     }
 
     // ==================== TESTS DE REGISTRO ====================
@@ -155,12 +161,12 @@ class AuthControllerTest {
     @Test
     void register_ShouldReturnBadRequest_WhenEmailAlreadyExists() throws Exception {
         when(authService.register(any(RegisterRequestDTO.class)))
-                .thenThrow(new RuntimeException("El email ya está registrado"));
+                .thenThrow(new EmailYaExistenteException("El email ya está registrado"));
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());  // 🔥 CAMBIADO: 409 en lugar de 400
     }
 
     // ==================== TESTS DE VALIDACIÓN DE ROL ====================
@@ -176,7 +182,7 @@ class AuthControllerTest {
 
         // 🔥 SI EL CONTROLADOR NO VALIDA EL ROL, EL SERVICE DEBE LANZAR EXCEPCIÓN
         when(authService.register(any(RegisterRequestDTO.class)))
-                .thenThrow(new RuntimeException("Rol inválido: INVALIDO"));
+                .thenThrow(new RolInvalidoException("Rol inválido: INVALIDO"));
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -195,7 +201,7 @@ class AuthControllerTest {
 
         // 🔥 SI EL CONTROLADOR NO VALIDA EL ROL, EL SERVICE DEBE LANZAR EXCEPCIÓN
         when(authService.register(any(RegisterRequestDTO.class)))
-                .thenThrow(new RuntimeException("El rol es obligatorio"));
+                .thenThrow(new RolInvalidoException("El rol es obligatorio"));
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

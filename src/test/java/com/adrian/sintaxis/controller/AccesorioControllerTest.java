@@ -2,6 +2,7 @@ package com.adrian.sintaxis.controller;
 
 import com.adrian.sintaxis.dto.AccesorioRequestDTO;
 import com.adrian.sintaxis.dto.AccesorioResponseDTO;
+import com.adrian.sintaxis.exception.GlobalExceptionHandler;
 import com.adrian.sintaxis.security.JwtService;
 import com.adrian.sintaxis.security.TokenBlacklistService;
 import com.adrian.sintaxis.service.IAccesorioService;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -31,6 +33,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AccesorioController.class)
+@Import(GlobalExceptionHandler.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AccesorioControllerTest {
 

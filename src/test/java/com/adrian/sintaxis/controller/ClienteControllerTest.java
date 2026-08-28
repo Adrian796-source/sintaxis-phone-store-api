@@ -4,6 +4,8 @@ import com.adrian.sintaxis.dto.ClienteRequestDTO;
 import com.adrian.sintaxis.dto.ClienteResponseDTO;
 import com.adrian.sintaxis.dto.ConfiguracionPuntosDTO;
 import com.adrian.sintaxis.dto.PerfilConHistorialDTO;
+import com.adrian.sintaxis.exception.GlobalExceptionHandler;
+import com.adrian.sintaxis.exception.PuntosInvalidosException;
 import com.adrian.sintaxis.exception.ResourceNotFoundException;
 import com.adrian.sintaxis.security.JwtService;
 import com.adrian.sintaxis.security.TokenBlacklistService;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -33,6 +36,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ClienteController.class)
+@Import(GlobalExceptionHandler.class)
 @AutoConfigureMockMvc(addFilters = false)
 class ClienteControllerTest {
 
@@ -316,7 +320,7 @@ class ClienteControllerTest {
     @Test
     void agregarPuntos_ShouldReturnBadRequest_WhenPuntosIsNegative() throws Exception {
         when(clienteService.agregarPuntos(eq(1L), eq(-5)))
-                .thenThrow(new RuntimeException("Los puntos no pueden ser negativos"));
+                .thenThrow(new PuntosInvalidosException("Los puntos no pueden ser negativos"));
 
         mockMvc.perform(patch("/api/clientes/1/puntos")
                         .param("puntos", "-5"))
