@@ -34,6 +34,8 @@ public class VentaService implements IVentaService {
     private static final int PUNTOS_POR_VENTA = 10;
     private static final List<String> ESTADOS_VALIDOS = List.of("Pendiente", "Pagada", "Entregada", "Cancelada");
     private static final double DESCUENTO_VIP = 0.10;
+    // 🔥 Constante para el estado "Pagada"
+    private static final String ESTADO_PAGADA = "Pagada";
 
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
@@ -131,7 +133,7 @@ public class VentaService implements IVentaService {
 
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        if ("Pagada".equals(dto.getEstado())) {
+        if (ESTADO_PAGADA.equals(dto.getEstado())) {
             int puntos = clienteService.calcularPuntosPorMonto(ventaGuardada.getTotal());
             clienteService.agregarPuntos(cliente.getIdCliente(), puntos);
         }
@@ -253,13 +255,13 @@ public class VentaService implements IVentaService {
                 d.getProducto().devolverStock(d.getCantidad());
                 productoRepository.save(d.getProducto());
             });
-            if ("Pagada".equals(estadoAnterior)) {
+            if (ESTADO_PAGADA.equals(estadoAnterior)) {
                 int puntos = clienteService.calcularPuntosPorMonto(venta.getTotal());
                 clienteService.restarPuntos(venta.getCliente().getIdCliente(), puntos);
             }
         }
 
-        if ("Pagada".equals(nuevoEstado) && !"Pagada".equals(estadoAnterior)) {
+        if (ESTADO_PAGADA.equals(nuevoEstado) && !ESTADO_PAGADA.equals(estadoAnterior)) {
             int puntos = clienteService.calcularPuntosPorMonto(venta.getTotal());
             clienteService.agregarPuntos(venta.getCliente().getIdCliente(), puntos);
         }
