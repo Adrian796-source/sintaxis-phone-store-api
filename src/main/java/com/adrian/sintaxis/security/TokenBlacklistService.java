@@ -54,7 +54,7 @@ public class TokenBlacklistService {
 
             log.info("🔴 Token agregado a blacklist. Expira: {}", expiration);
             log.info("📊 Blacklist size: {}", blacklist.size());
-            
+
         } catch (JwtException e) {
             throw new TokenInvalidoException("Token inválido: " + e.getMessage());
         }
