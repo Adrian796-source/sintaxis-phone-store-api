@@ -22,7 +22,6 @@ import com.adrian.sintaxis.exception.*;
 import java.time.ZoneId;
 import java.time.LocalDateTime;  // 🔴 IMPORT NUEVO
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -180,11 +179,11 @@ public class AuthService {
     public List<ClienteResponseDTO> clientesSinUsuario() {
         List<Cliente> clientes = clienteRepository.findAll().stream()
                 .filter(c -> c.getUsuario() == null)
-                .collect(Collectors.toList());
+                .toList();
 
         return clientes.stream()
                 .map(this::toClienteResponseDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private ClienteResponseDTO toClienteResponseDTO(Cliente cliente) {
