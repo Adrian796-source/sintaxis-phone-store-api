@@ -34,9 +34,11 @@ public class VentaService implements IVentaService {
     private static final int PUNTOS_POR_VENTA = 10;
     private static final List<String> ESTADOS_VALIDOS = List.of("Pendiente", "Pagada", "Entregada", "Cancelada");
     private static final double DESCUENTO_VIP = 0.10;
-    // 🔥 Constante para el estado "Pagada"
+    // 🔥 Constante para el estado "Pagada", "cancelada" y "venta no encontrada por id"
     private static final String ESTADO_PAGADA = "Pagada";
     private static final String ESTADO_CANCELADA = "Cancelada";
+    // 🔥 Constante para el mensaje de error de recurso no encontrado
+    private static final String VENTA_NO_ENCONTRADA = "Venta no encontrada con id: ";
 
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
@@ -146,7 +148,7 @@ public class VentaService implements IVentaService {
     public Optional<VentaResponseDTO> buscarPorId(Long id) {
         return Optional.of(ventaRepository.findById(id)
                 .map(this::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + id)));
+                .orElseThrow(() -> new ResourceNotFoundException(VENTA_NO_ENCONTRADA + id)));
     }
 
     @Override
@@ -157,7 +159,7 @@ public class VentaService implements IVentaService {
     @Override
     public VentaResponseDTO actualizar(Long id, VentaRequestDTO dto) {
         Venta existente = ventaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(VENTA_NO_ENCONTRADA + id));
 
         if (ESTADO_CANCELADA.equals(existente.getEstado())) {
             throw new VentaCanceladaException("No se puede modificar una venta cancelada");
@@ -174,7 +176,7 @@ public class VentaService implements IVentaService {
     @Override
     public void eliminar(Long id) {
         Venta venta = ventaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(VENTA_NO_ENCONTRADA + id));
         venta.setActivo(false);
         ventaRepository.save(venta);
     }
@@ -242,7 +244,7 @@ public class VentaService implements IVentaService {
             throw new EstadoInvalidoException("Estado inválido. Los estados válidos son: " + ESTADOS_VALIDOS);
         }
         Venta venta = ventaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(VENTA_NO_ENCONTRADA + id));
 
         if (ESTADO_CANCELADA.equals(venta.getEstado())) {
             throw new VentaCanceladaException("No se puede cambiar el estado de una venta cancelada");
