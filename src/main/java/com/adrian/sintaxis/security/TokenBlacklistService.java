@@ -52,7 +52,7 @@ public class TokenBlacklistService {
             // Limpiar tokens expirados (opcional pero recomendado)
             cleanExpiredTokens();
 
-            log.info("🔴 Token agregado a blacklist. Expira: " + expiration);
+            log.info("🔴 Token agregado a blacklist. Expira: {}", expiration);
             log.info("📊 Blacklist size: " + blacklist.size());
 
         } catch (JwtException e) {
@@ -92,7 +92,7 @@ public class TokenBlacklistService {
         blacklist.entrySet().removeIf(entry -> entry.getValue().before(now));
         int after = blacklist.size();
         if (before != after) {
-            log.info("🧹 Blacklist limpiada. Removidos: " + (before - after) + " tokens expirados");
+            log.info("🧹 Blacklist limpiada. Removidos: {} tokens expirados", (before - after));
         }
     }
 
@@ -103,7 +103,7 @@ public class TokenBlacklistService {
     public void scheduledCleanup() {
         if (configuracionJwt.getBlacklist().isEnabled()) {
             cleanExpiredTokens();
-            log.info("🧹 Limpieza programada completada. Tamaño actual: " + blacklist.size());
+            log.info("🧹 Limpieza programada completada. Tamaño actual: {}", blacklist.size());
         }
     }
 
