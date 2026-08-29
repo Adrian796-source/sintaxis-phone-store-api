@@ -36,6 +36,7 @@ public class VentaService implements IVentaService {
     private static final double DESCUENTO_VIP = 0.10;
     // 🔥 Constante para el estado "Pagada"
     private static final String ESTADO_PAGADA = "Pagada";
+    private static final String ESTADO_CANCELADA = "Cancelada";
 
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
@@ -158,7 +159,7 @@ public class VentaService implements IVentaService {
         Venta existente = ventaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + id));
 
-        if ("Cancelada".equals(existente.getEstado())) {
+        if (ESTADO_CANCELADA.equals(existente.getEstado())) {
             throw new VentaCanceladaException("No se puede modificar una venta cancelada");
         }
 
@@ -243,14 +244,14 @@ public class VentaService implements IVentaService {
         Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + id));
 
-        if ("Cancelada".equals(venta.getEstado())) {
+        if (ESTADO_CANCELADA.equals(venta.getEstado())) {
             throw new VentaCanceladaException("No se puede cambiar el estado de una venta cancelada");
         }
 
         String estadoAnterior = venta.getEstado();
         venta.setEstado(nuevoEstado);
 
-        if ("Cancelada".equals(nuevoEstado)) {
+        if (ESTADO_CANCELADA.equals(nuevoEstado)) {
             venta.getDetalles().forEach(d -> {
                 d.getProducto().devolverStock(d.getCantidad());
                 productoRepository.save(d.getProducto());
