@@ -21,6 +21,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -114,51 +117,6 @@ class AuthControllerTest {
     }
 
     @Test
-    void register_ShouldReturnBadRequest_WhenNombreIsEmpty() throws Exception {
-        RegisterRequestDTO invalidRequest = new RegisterRequestDTO();
-        invalidRequest.setNombre("");
-        invalidRequest.setApellido("Apellido Test");
-        invalidRequest.setEmail("test@test.com");
-        invalidRequest.setPassword("password123");
-        invalidRequest.setRol("CLIENTE");
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void register_ShouldReturnBadRequest_WhenApellidoIsEmpty() throws Exception {
-        RegisterRequestDTO invalidRequest = new RegisterRequestDTO();
-        invalidRequest.setNombre("Test User");
-        invalidRequest.setApellido("");
-        invalidRequest.setEmail("test@test.com");
-        invalidRequest.setPassword("password123");
-        invalidRequest.setRol("CLIENTE");
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void register_ShouldReturnBadRequest_WhenEmailIsInvalid() throws Exception {
-        RegisterRequestDTO invalidRequest = new RegisterRequestDTO();
-        invalidRequest.setNombre("Test User");
-        invalidRequest.setApellido("Apellido Test");
-        invalidRequest.setEmail("email-invalido");
-        invalidRequest.setPassword("password123");
-        invalidRequest.setRol("CLIENTE");
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void register_ShouldReturnBadRequest_WhenEmailAlreadyExists() throws Exception {
         when(authService.register(any(RegisterRequestDTO.class)))
                 .thenThrow(new EmailYaExistenteException("El email ya está registrado"));
@@ -189,6 +147,23 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "email-invalido"})
+    void register_ShouldReturnBadRequest_WhenFieldIsEmptyOrInvalid(String invalidValue) throws Exception {
+        RegisterRequestDTO invalidRequest = new RegisterRequestDTO();
+        invalidRequest.setNombre(invalidValue);
+        invalidRequest.setApellido(invalidValue);
+        invalidRequest.setEmail(invalidValue);
+        invalidRequest.setPassword("password123");
+        invalidRequest.setRol("CLIENTE");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+    }
+
 
     @Test
     void register_ShouldReturnBadRequest_WhenRolIsNull() throws Exception {
