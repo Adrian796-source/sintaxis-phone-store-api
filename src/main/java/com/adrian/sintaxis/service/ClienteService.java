@@ -84,7 +84,7 @@ public class ClienteService implements IClienteService {
         // 3. Convertir ventas a DTOs (reutilizando la lógica de VentaService)
         List<VentaResponseDTO> historial = ventas.stream()
                 .map(this::convertirVentaADTO)
-                .collect(Collectors.toList());
+                .toList();
 
         // 4. Construir respuesta
         PerfilConHistorialDTO perfil = new PerfilConHistorialDTO();
@@ -122,7 +122,7 @@ public class ClienteService implements IClienteService {
         if (venta.getDetalles() != null) {
             dto.setDetalles(venta.getDetalles().stream()
                     .map(this::convertirDetalleADTO)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         return dto;
