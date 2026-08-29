@@ -31,14 +31,14 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class VentaService implements IVentaService {
 
-    private static final int PUNTOS_POR_VENTA = 10;
-    private static final List<String> ESTADOS_VALIDOS = List.of("Pendiente", "Pagada", "Entregada", "Cancelada");
-    private static final double DESCUENTO_VIP = 0.10;
     // 🔥 Constante para el estado "Pagada", "cancelada" y "venta no encontrada por id"
     private static final String ESTADO_PAGADA = "Pagada";
     private static final String ESTADO_CANCELADA = "Cancelada";
     // 🔥 Constante para el mensaje de error de recurso no encontrado
     private static final String VENTA_NO_ENCONTRADA = "Venta no encontrada con id: ";
+    private static final int PUNTOS_POR_VENTA = 10;
+    private static final List<String> ESTADOS_VALIDOS = List.of("Pendiente", ESTADO_PAGADA, "Entregada", ESTADO_CANCELADA);
+    private static final double DESCUENTO_VIP = 0.10;
 
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;

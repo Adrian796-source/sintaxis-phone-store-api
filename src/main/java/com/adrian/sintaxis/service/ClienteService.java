@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class ClienteService implements IClienteService {
 
     private static final long CONFIG_ID = 1L;
+    private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado con id: ";
 
     private final ClienteRepository clienteRepository;
     private final ConfiguracionPuntosRepository configuracionPuntosRepository;
@@ -172,7 +173,7 @@ public class ClienteService implements IClienteService {
     public Optional<ClienteResponseDTO> buscarPorId(Long id) {
         return Optional.of(clienteRepository.findById(id)
                 .map(this::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id)));
+                .orElseThrow(() -> new ResourceNotFoundException(CLIENTE_NO_ENCONTRADO + id)));
     }
 
     @Override
@@ -183,7 +184,7 @@ public class ClienteService implements IClienteService {
     @Override
     public ClienteResponseDTO actualizar(Long id, ClienteRequestDTO dto) {
         Cliente existente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CLIENTE_NO_ENCONTRADO + id));
 
         Optional<Cliente> clienteConEmail = clienteRepository.findByEmail(dto.getEmail());
         if (clienteConEmail.isPresent() && !clienteConEmail.get().getIdCliente().equals(id)) {
@@ -202,7 +203,7 @@ public class ClienteService implements IClienteService {
 
     public void eliminar(Long id) {
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CLIENTE_NO_ENCONTRADO + id));
         cliente.setActivo(false);
         clienteRepository.save(cliente);
     }
@@ -229,7 +230,7 @@ public class ClienteService implements IClienteService {
             throw new PuntosInvalidosException("Los puntos deben ser un valor positivo");
         }
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CLIENTE_NO_ENCONTRADO + id));
 
         cliente.setPuntosAcumulados(cliente.getPuntosAcumulados() + puntos);
 
@@ -243,7 +244,7 @@ public class ClienteService implements IClienteService {
     @Override
     public ClienteResponseDTO restarPuntos(Long id, int puntos) {
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CLIENTE_NO_ENCONTRADO + id));
 
         int nuevosPuntos = Math.max(0, cliente.getPuntosAcumulados() - puntos);
         cliente.setPuntosAcumulados(nuevosPuntos);
