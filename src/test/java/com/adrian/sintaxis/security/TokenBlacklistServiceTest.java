@@ -75,7 +75,7 @@ class TokenBlacklistServiceTest {
 
         tokenBlacklistService.addToBlacklist(token);
 
-        assertThat(tokenBlacklistService.getBlacklistSize()).isEqualTo(0);
+        assertThat(tokenBlacklistService.getBlacklistSize()).isZero();
     }
 
     @Test
@@ -126,8 +126,6 @@ class TokenBlacklistServiceTest {
         // ✅ Agregar token expirado
         blacklistMap.put(token, new Date(System.currentTimeMillis() - 1000));
 
-        Thread.sleep(100L);
-
         boolean isBlacklisted = tokenBlacklistService.isBlacklisted(token);
         assertThat(isBlacklisted).isFalse();
     }
@@ -142,8 +140,6 @@ class TokenBlacklistServiceTest {
 
         // ✅ Agregar token expirado
         blacklistMap.put(token, new Date(System.currentTimeMillis() - 1000));
-
-        Thread.sleep(100L);
 
         tokenBlacklistService.scheduledCleanup();
 
