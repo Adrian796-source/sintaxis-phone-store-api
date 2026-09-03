@@ -536,7 +536,7 @@ class ClienteServiceTest {
         assertThat(result.getTelefono()).isEqualTo("123456789");
         assertThat(result.getDireccion()).isEqualTo("Calle Falsa 123");
         assertThat(result.isEsVip()).isFalse();
-        assertThat(result.getPuntosAcumulados()).isEqualTo(0);
+        assertThat(result.getPuntosAcumulados()).isZero();
         assertThat(result.getHistorialCompras()).hasSize(1);
         assertThat(result.getHistorialCompras().get(0).getIdVenta()).isEqualTo(1L);
 
@@ -657,8 +657,6 @@ class ClienteServiceTest {
 
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));
 
-        // 🔥 ELIMINAR este stubbing porque NO se usa
-        // when(configuracionPuntosRepository.findById(1L)).thenReturn(Optional.of(configuracionPuntos));
 
         // Crear cliente actualizado
         Cliente clienteActualizado = new Cliente();
