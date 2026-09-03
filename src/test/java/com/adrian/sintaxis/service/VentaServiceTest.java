@@ -286,8 +286,8 @@ class VentaServiceTest {
     @Test
     void actualizar_ShouldThrowException_WhenVentaNotFound() {
         when(ventaRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> ventaService.actualizar(99L, new VentaRequestDTO()))
+        VentaRequestDTO dto = new VentaRequestDTO(); // ✅ Crear DTO fuera de la lambda
+        assertThatThrownBy(() -> ventaService.actualizar(99L, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Venta no encontrada con id: 99");
     }
