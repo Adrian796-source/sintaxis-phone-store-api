@@ -2,6 +2,7 @@ package com.adrian.sintaxis.service;
 
 import com.adrian.sintaxis.dto.*;
 import com.adrian.sintaxis.exception.ResourceNotFoundException;
+import com.adrian.sintaxis.exception.VentaCanceladaException;
 import com.adrian.sintaxis.model.*;
 import com.adrian.sintaxis.repository.ClienteRepository;
 import com.adrian.sintaxis.repository.ProductoRepository;
@@ -296,9 +297,9 @@ class VentaServiceTest {
     void actualizar_ShouldThrowException_WhenVentaCancelada() {
         venta.setEstado("Cancelada");
         when(ventaRepository.findById(1L)).thenReturn(Optional.of(venta));
-
-        assertThatThrownBy(() -> ventaService.actualizar(1L, new VentaRequestDTO()))
-                .isInstanceOf(RuntimeException.class)
+        VentaRequestDTO dto = new VentaRequestDTO(); // ✅ Crear DTO fuera de la lambda
+        assertThatThrownBy(() -> ventaService.actualizar(1L, dto))
+                .isInstanceOf(VentaCanceladaException.class)
                 .hasMessageContaining("No se puede modificar una venta cancelada");
     }
 
