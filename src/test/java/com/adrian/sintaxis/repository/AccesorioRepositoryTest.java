@@ -100,10 +100,11 @@ class AccesorioRepositoryTest {
     @Test
     void findByEsOriginalTrue_ShouldReturnOnlyOriginalAccesorios() {
         List<Accesorio> result = accesorioRepository.findByEsOriginalTrue();
-
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(Accesorio::isEsOriginal);
-        assertThat(result).extracting("nombre").containsExactlyInAnyOrder("Funda de Silicona", "Auriculares Bluetooth");
+        assertThat(result)
+                .hasSize(2)
+                .allMatch(Accesorio::isEsOriginal)
+                .extracting("nombre")
+                .containsExactlyInAnyOrder("Funda de Silicona", "Auriculares Bluetooth");
     }
 
     @Test
