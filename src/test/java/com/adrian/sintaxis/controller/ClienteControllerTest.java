@@ -323,7 +323,7 @@ class ClienteControllerTest {
 
     @Test
     void agregarPuntos_ShouldReturnBadRequest_WhenPuntosIsNegative() throws Exception {
-        when(clienteService.agregarPuntos(eq(1L), eq(-5)))
+        when(clienteService.agregarPuntos(1L, -5))
                 .thenThrow(new PuntosInvalidosException("Los puntos no pueden ser negativos"));
 
         mockMvc.perform(patch("/api/clientes/1/puntos")
@@ -333,7 +333,7 @@ class ClienteControllerTest {
 
     @Test
     void agregarPuntos_ShouldReturnNotFound_WhenClienteDoesNotExist() throws Exception {
-        when(clienteService.agregarPuntos(eq(99L), eq(10)))
+        when(clienteService.agregarPuntos(99L, 10))
                 .thenThrow(new ResourceNotFoundException("Cliente no encontrado"));
 
         mockMvc.perform(patch("/api/clientes/99/puntos")
