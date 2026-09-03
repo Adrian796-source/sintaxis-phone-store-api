@@ -22,18 +22,18 @@ class JacksonConfigTest {
     void shouldSerializeLocalDateTime() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         String json = objectMapper.writeValueAsString(Map.of("fecha", now));
-
-        assertThat(json).isNotNull();
-        assertThat(json).contains("\"fecha\"");
+        assertThat(json)
+                .isNotNull()
+                .contains("\"fecha\"");
     }
 
     @Test
     void shouldDeserializeLocalDateTime() throws Exception {
         String json = "{\"fecha\":\"2024-01-15T10:30:00\"}";
         Map<String, Object> result = objectMapper.readValue(json, Map.class);
-
-        assertThat(result).isNotNull();
-        assertThat(result).containsKey("fecha");
+        assertThat(result)
+                .isNotNull()
+                .containsKey("fecha");
     }
 
     @Test
