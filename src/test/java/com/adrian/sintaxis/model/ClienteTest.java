@@ -37,7 +37,7 @@ class ClienteTest {
         assertThat(cliente.getDireccion()).isEqualTo("Calle Falsa 123");
         assertThat(cliente.getFechaRegistro()).isNotNull();
         assertThat(cliente.isEsVip()).isFalse();
-        assertThat(cliente.getPuntosAcumulados()).isEqualTo(0);
+        assertThat(cliente.getPuntosAcumulados()).isZero();
         assertThat(cliente.isActivo()).isTrue();
     }
 
