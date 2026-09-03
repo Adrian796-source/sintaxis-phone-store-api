@@ -78,7 +78,9 @@ class ProductoTest {
     @Test
     void shouldShowDetails() {
         String detalles = producto.mostrarDetalles();
-        assertThat(detalles).contains("Producto");
-        assertThat(detalles).contains(producto.getNombre());
+        assertThat(detalles)
+                .contains("Producto")
+                .contains(producto.getNombre());
     }
+
 }
