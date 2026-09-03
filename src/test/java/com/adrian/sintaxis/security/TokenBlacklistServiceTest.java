@@ -29,9 +29,7 @@ class TokenBlacklistServiceTest {
     @InjectMocks
     private TokenBlacklistService tokenBlacklistService;
 
-    private static final String SECRET_KEY_STRING = System.getenv("JWT_TEST_SECRET") != null 
-    ? System.getenv("JWT_TEST_SECRET") 
-    : "clave-de-test-para-unit-tests";
+    private static final String SECRET_KEY_STRING = "EstaEsUnaClaveSecretaMuyLargaYSuperSeguraParaJWT123456789";
     private static final long EXPIRATION = 3600000L;
 
     private ConcurrentHashMap<String, Date> blacklistMap;
@@ -148,18 +146,11 @@ class TokenBlacklistServiceTest {
 
     @Test
     void getBlacklistSize_ShouldReturnCorrectSize() {
-        // ✅ No necesitamos configurar el mock porque no usamos addToBlacklist()
-        // ConfiguracionJwt.Blacklist realBlacklist = new ConfiguracionJwt.Blacklist();
-        // realBlacklist.setEnabled(true);
-        // when(configuracionJwt.getBlacklist()).thenReturn(realBlacklist); // ❌ ELIMINAR ESTA LÍNEA
-
         String token1 = generateToken("user1@test.com");
         String token2 = generateToken("user2@test.com");
-
         // ✅ Agregar tokens directamente
         blacklistMap.put(token1, new Date(System.currentTimeMillis() + EXPIRATION));
         blacklistMap.put(token2, new Date(System.currentTimeMillis() + EXPIRATION));
-
         assertThat(tokenBlacklistService.getBlacklistSize()).isEqualTo(2);
     }
 
