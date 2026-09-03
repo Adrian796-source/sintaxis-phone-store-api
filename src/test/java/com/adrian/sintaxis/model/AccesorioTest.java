@@ -50,9 +50,11 @@ class AccesorioTest {
     @Test
     void shouldShowDetails() {
         String detalles = accesorio.mostrarDetalles();
-        assertThat(detalles).contains("Funda");
-        assertThat(detalles).contains("Silicona");
-        assertThat(detalles).contains("Original");
-        assertThat(detalles).contains("iPhone 15 Pro Max");
+        assertThat(detalles)
+                .contains("Funda")
+                .contains("Silicona")
+                .contains("Original")
+                .contains("iPhone 15 Pro Max");
     }
+
 }
