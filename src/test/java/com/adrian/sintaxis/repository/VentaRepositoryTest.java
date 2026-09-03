@@ -84,9 +84,9 @@ class VentaRepositoryTest {
     @Test
     void findByClienteIdCliente_ShouldReturnVentas() {
         List<Venta> result = ventaRepository.findByClienteIdCliente(cliente.getIdCliente());
-
-        assertThat(result).hasSize(3);
-        assertThat(result).allMatch(v -> v.getCliente().getIdCliente().equals(cliente.getIdCliente()));
+        assertThat(result)
+                .hasSize(3)
+                .allMatch(v -> v.getCliente().getIdCliente().equals(cliente.getIdCliente()));
     }
 
     @Test
@@ -99,9 +99,9 @@ class VentaRepositoryTest {
     @Test
     void findByEstado_ShouldReturnVentasByEstado() {
         List<Venta> result = ventaRepository.findByEstado("Pagada");
-
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(v -> v.getEstado().equals("Pagada"));
+        assertThat(result)
+                .hasSize(2)
+                .allMatch(v -> v.getEstado().equals("Pagada"));
     }
 
     @Test
@@ -175,8 +175,9 @@ class VentaRepositoryTest {
     void topClientes_ShouldReturnTopClientesByTotal() {
         List<Object[]> result = ventaRepository.topClientes();
 
-        assertThat(result).isNotEmpty();
-        assertThat(result).hasSize(1);
+        assertThat(result)
+                .isNotEmpty()
+                .hasSize(1);
 
         Object[] row = result.get(0);
         Long idCliente = (Long) row[0];
