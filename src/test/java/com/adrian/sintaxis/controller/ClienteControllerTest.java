@@ -4,7 +4,6 @@ import com.adrian.sintaxis.dto.ClienteRequestDTO;
 import com.adrian.sintaxis.dto.ClienteResponseDTO;
 import com.adrian.sintaxis.dto.ConfiguracionPuntosDTO;
 import com.adrian.sintaxis.dto.PerfilConHistorialDTO;
-import com.adrian.sintaxis.exception.GlobalExceptionHandler;
 import com.adrian.sintaxis.exception.PuntosInvalidosException;
 import com.adrian.sintaxis.exception.ResourceNotFoundException;
 import com.adrian.sintaxis.security.JwtService;
@@ -22,6 +21,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.adrian.sintaxis.exception.AuthExceptionHandler;
+import com.adrian.sintaxis.exception.ClienteExceptionHandler;
+import com.adrian.sintaxis.exception.ProductoExceptionHandler;
+import com.adrian.sintaxis.exception.VentaExceptionHandler;
+
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -36,7 +40,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ClienteController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({ProductoExceptionHandler.class, AuthExceptionHandler.class, ClienteExceptionHandler.class, VentaExceptionHandler.class})
 @AutoConfigureMockMvc(addFilters = false)
 class ClienteControllerTest {
 

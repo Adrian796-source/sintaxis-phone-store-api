@@ -4,7 +4,6 @@ import com.adrian.sintaxis.dto.AuthResponseDTO;
 import com.adrian.sintaxis.dto.LoginRequestDTO;
 import com.adrian.sintaxis.dto.RegisterRequestDTO;
 import com.adrian.sintaxis.exception.EmailYaExistenteException;
-import com.adrian.sintaxis.exception.GlobalExceptionHandler;
 import com.adrian.sintaxis.exception.RolInvalidoException;
 import com.adrian.sintaxis.security.JwtService;
 import com.adrian.sintaxis.security.TokenBlacklistService;
@@ -21,16 +20,21 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.adrian.sintaxis.exception.AuthExceptionHandler;
+import com.adrian.sintaxis.exception.ClienteExceptionHandler;
+import com.adrian.sintaxis.exception.ProductoExceptionHandler;
+import com.adrian.sintaxis.exception.VentaExceptionHandler;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({ProductoExceptionHandler.class, AuthExceptionHandler.class, ClienteExceptionHandler.class, VentaExceptionHandler.class})
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
