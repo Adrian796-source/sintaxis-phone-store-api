@@ -100,9 +100,9 @@ class ProductoRepositoryTest {
     @Test
     void findByCategoria_ShouldReturnProductos() {
         List<Producto> result = productoRepository.findByCategoria("Celular");
-
-        assertThat(result).hasSize(3);
-        assertThat(result).allMatch(p -> p.getCategoria().equals("Celular"));
+        assertThat(result)
+                .hasSize(3)
+                .allMatch(p -> p.getCategoria().equals("Celular"));
     }
 
     @Test
@@ -123,17 +123,17 @@ class ProductoRepositoryTest {
     @Test
     void findByActivoTrue_ShouldReturnOnlyActiveProductos() {
         List<Producto> result = productoRepository.findByActivoTrue();
-
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(Producto::isActivo);
+        assertThat(result)
+                .hasSize(2)
+                .allMatch(Producto::isActivo);
     }
 
     @Test
     void findByStockGreaterThan_ShouldReturnProductosWithStock() {
         List<Producto> result = productoRepository.findByStockGreaterThan(5);
-
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(p -> p.getStock() > 5);
+        assertThat(result)
+                .hasSize(2)
+                .allMatch(p -> p.getStock() > 5);
     }
 
     @Test
