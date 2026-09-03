@@ -111,9 +111,9 @@ class CelularRepositoryTest {
     @Test
     void findBySistemaOperativo_ShouldReturnCelulares() {
         List<Celular> result = celularRepository.findBySistemaOperativo("Android 14");
-
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(c -> c.getSistemaOperativo().equals("Android 14"));
+        assertThat(result)
+                .hasSize(2)
+                .allMatch(c -> c.getSistemaOperativo().equals("Android 14"));
     }
 
     @Test
@@ -126,17 +126,19 @@ class CelularRepositoryTest {
     @Test
     void findByEsLibreTrue_ShouldReturnOnlyLibreCelulares() {
         List<Celular> result = celularRepository.findByEsLibreTrue();
-
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(Celular::isEsLibre);
+        assertThat(result)
+                .hasSize(2)
+                .allMatch(Celular::isEsLibre);
     }
 
     @Test
     void findByAlmacenamientoGBBetween_ShouldReturnCelularesInRange() {
         List<Celular> result = celularRepository.findByAlmacenamientoGBBetween(200, 400);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAlmacenamientoGB()).isEqualTo(256);
+        assertThat(result)
+                .hasSize(1)
+                .first()
+                .extracting(Celular::getAlmacenamientoGB)
+                .isEqualTo(256);
     }
 
     @Test
