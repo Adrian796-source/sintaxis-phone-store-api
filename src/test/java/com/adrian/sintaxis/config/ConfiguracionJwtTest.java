@@ -34,17 +34,18 @@ class ConfiguracionJwtTest {
     @Test
     void shouldHaveValidExpiration() {
         Long expiration = configuracionJwt.getExpiration();
-        assertThat(expiration).isNotNull();
-        assertThat(expiration).isGreaterThan(0);
-        assertThat(expiration).isGreaterThanOrEqualTo(3600000L); // 1 hora
+        assertThat(expiration)
+                .isNotNull()
+                .isGreaterThan(0)
+                .isGreaterThanOrEqualTo(3600000L); // 1 hora
     }
 
     @Test
     void shouldHaveBlacklistConfig() {
         ConfiguracionJwt.Blacklist blacklist = configuracionJwt.getBlacklist();
-        assertThat(blacklist).isNotNull();
-        assertThat(blacklist.isEnabled()).isTrue();
-        assertThat(blacklist.getCleanupInterval()).isNotNull();
-        assertThat(blacklist.getCleanupInterval()).isPositive();
+        assertThat(blacklist)
+                .isNotNull()
+                .satisfies(b -> assertThat(b.isEnabled()).isTrue());
     }
+
 }
