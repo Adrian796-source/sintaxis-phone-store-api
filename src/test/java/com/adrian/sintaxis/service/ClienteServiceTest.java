@@ -20,6 +20,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -504,31 +507,16 @@ class ClienteServiceTest {
 
     // ==================== TESTS CALCULAR PUNTOS POR MONTO ====================
 
-    @Test
-    void calcularPuntosPorMonto_ShouldCalculateCorrectly() {
+    @ParameterizedTest
+    @CsvSource({
+            "150.0, 15",
+            "0.0, 0",
+            "9999.99, 999"
+    })
+    void calcularPuntosPorMonto_ShouldCalculateCorrectly(double monto, int puntosEsperados) {
         when(configuracionPuntosRepository.findById(1L)).thenReturn(Optional.of(configuracionPuntos));
-
-        int puntos = clienteService.calcularPuntosPorMonto(150.0);
-
-        assertThat(puntos).isEqualTo(15); // 150 / 10 = 15
-    }
-
-    @Test
-    void calcularPuntosPorMonto_ShouldReturnZero_WhenMontoCero() {
-        when(configuracionPuntosRepository.findById(1L)).thenReturn(Optional.of(configuracionPuntos));
-
-        int puntos = clienteService.calcularPuntosPorMonto(0.0);
-
-        assertThat(puntos).isEqualTo(0);
-    }
-
-    @Test
-    void calcularPuntosPorMonto_ShouldHandleLargeAmounts() {
-        when(configuracionPuntosRepository.findById(1L)).thenReturn(Optional.of(configuracionPuntos));
-
-        int puntos = clienteService.calcularPuntosPorMonto(9999.99);
-
-        assertThat(puntos).isEqualTo(999); // 9999.99 / 10 = 999 (truncado)
+        int puntos = clienteService.calcularPuntosPorMonto(monto);
+        assertThat(puntos).isEqualTo(puntosEsperados);
     }
 
     // ==================== TESTS OBTENER PERFIL CON HISTORIAL ====================
