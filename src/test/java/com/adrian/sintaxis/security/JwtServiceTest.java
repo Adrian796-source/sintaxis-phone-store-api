@@ -40,16 +40,15 @@ class JwtServiceTest {
     @Test
     void generarToken_ShouldCreateValidToken() {
         String token = jwtService.generarToken(userDetails);
-
-        assertThat(token).isNotNull();
-        assertThat(token).isNotEmpty();
+        assertThat(token)
+                .isNotNull()
+                .isNotEmpty();
     }
 
     @Test
     void extraerEmail_ShouldReturnEmailFromToken() {
         String token = jwtService.generarToken(userDetails);
         String email = jwtService.extraerEmail(token);
-
         assertThat(email).isEqualTo("adrian@test.com");
     }
 
