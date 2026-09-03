@@ -54,10 +54,12 @@ class CelularTest {
     @Test
     void shouldShowDetails() {
         String detalles = celular.mostrarDetalles();
-        assertThat(detalles).contains("Samsung");
-        assertThat(detalles).contains("Android 14");
-        assertThat(detalles).contains("12 GB RAM");
-        assertThat(detalles).contains("256 GB Storage");
-        assertThat(detalles).contains("5000 mAh");
+        assertThat(detalles)
+                .contains("Samsung")
+                .contains("Android 14")
+                .contains("12 GB RAM")
+                .contains("256 GB Storage")
+                .contains("5000 mAh");
     }
+
 }
