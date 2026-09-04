@@ -108,7 +108,7 @@ class ClienteServiceTest {
         assertThat(result.getTelefono()).isEqualTo("123456789");
         assertThat(result.getDireccion()).isEqualTo("Calle Falsa 123");
         assertThat(result.isEsVip()).isFalse();
-        assertThat(result.getPuntosAcumulados()).isEqualTo(0);
+        assertThat(result.getPuntosAcumulados()).isZero();
         assertThat(result.isActivo()).isTrue();
         assertThat(result.getFechaRegistro()).isNotNull();
 
