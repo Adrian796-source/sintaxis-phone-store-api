@@ -3,7 +3,7 @@ package com.adrian.sintaxis.model;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RolTest {
+class RolTest {
 
     @Test
     void shouldHaveCorrectValues() {
