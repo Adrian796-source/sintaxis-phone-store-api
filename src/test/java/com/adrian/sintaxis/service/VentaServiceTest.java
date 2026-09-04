@@ -520,13 +520,12 @@ class VentaServiceTest {
         );
 
         when(ventaRepository.contarPorEstado()).thenReturn(mockResult);
-
         Map<String, Long> result = ventaService.ventasPorEstado();
-
-        assertThat(result).hasSize(3);
-        assertThat(result.get("Pagada")).isEqualTo(5L);
-        assertThat(result.get("Pendiente")).isEqualTo(3L);
-        assertThat(result.get("Entregada")).isEqualTo(2L);
+        assertThat(result)
+                .hasSize(3)
+                .containsEntry("Pagada", 5L)
+                .containsEntry("Pendiente", 3L)
+                .containsEntry("Entregada", 2L);
     }
 
     // ==================== TESTS TOP CLIENTES ====================
