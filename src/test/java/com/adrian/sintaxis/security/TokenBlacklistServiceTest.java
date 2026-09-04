@@ -141,7 +141,7 @@ class TokenBlacklistServiceTest {
 
         tokenBlacklistService.scheduledCleanup();
 
-        assertThat(tokenBlacklistService.getBlacklistSize()).isEqualTo(0);
+        assertThat(tokenBlacklistService.getBlacklistSize()).isZero();
     }
 
     @Test
