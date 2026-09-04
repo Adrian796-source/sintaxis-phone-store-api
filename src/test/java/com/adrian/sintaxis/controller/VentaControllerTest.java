@@ -372,7 +372,7 @@ class VentaControllerTest {
     @Test
     void cambiarEstado_ShouldReturnBadRequest_WhenEstadoIsInvalid() throws Exception {
         // 🔥 FIX: Simular que el servicio lanza IllegalArgumentException para estado inválido
-        when(ventaService.cambiarEstado(eq(1L), eq("INVALIDO")))
+        when(ventaService.cambiarEstado(1L,"INVALIDO"))
                 .thenThrow(new EstadoInvalidoException("Estado inválido: INVALIDO"));
 
         mockMvc.perform(patch("/api/ventas/1/estado")
