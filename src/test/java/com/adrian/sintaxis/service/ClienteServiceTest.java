@@ -673,7 +673,7 @@ class ClienteServiceTest {
         ClienteResponseDTO result = clienteService.restarPuntos(1L, 50);
 
         assertThat(result).isNotNull();
-        assertThat(result.getPuntosAcumulados()).isEqualTo(0);
+        assertThat(result.getPuntosAcumulados()).isZero();
         assertThat(result.isEsVip()).isFalse();
 
         // ✅ Verificar que el mock NO fue invocado
