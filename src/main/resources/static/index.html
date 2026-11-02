@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sintaxis — Kyū Dark Mode Inventory</title>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-canvas: #090A0F;
+            --surface: #12141C;
+            --surface-hover: #161A24;
+            --border-color: #1F2430;
+            --border-focus: #38BDF8;
+            --text-main: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --text-muted: #6B7280;
+            --accent-cyan: #38BDF8;
+            --accent-cyan-glow: rgba(56, 189, 248, 0.15);
+            --danger-rose: #F43F5E;
+            --danger-bg: rgba(244, 63, 94, 0.1);
+            --success-emerald: #10B981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --radius: 8px;
+            --shadow-kyu: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2.5rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        .brand h1 {
+            font-size: 1.625rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand h1 span {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            background: var(--accent-cyan-glow);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .brand p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.35rem;
+        }
+
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-kyu);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--border-color);
+        }
+
+        .metric-card.accent::after {
+            background: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .metric-card.danger::after {
+            background: var(--danger-rose);
+            box-shadow: 0 0 10px var(--danger-rose);
+        }
+
+        .metric-card .label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .metric-card .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 0.4rem;
+        }
+
+        .toolbar {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-kyu);
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            flex: 1;
+        }
+
+        .search-input, .select-filter {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-canvas);
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input {
+            min-width: 300px;
+            flex: 1;
+        }
+
+        .search-input:focus, .select-filter:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-cyan-glow);
+        }
+
+        .btn {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            background: var(--surface);
+            color: var(--text-main);
+        }
+
+        .btn-primary {
+            background: var(--accent-cyan);
+            color: #090A0F;
+            border-color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #7dd3fc;
+            box-shadow: 0 0 15px var(--accent-cyan-glow);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-secondary);
+            background: var(--surface-hover);
+        }
+
+        .table-container {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-kyu);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.875rem;
+        }
+
+        th {
+            background: #0E1017;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1.125rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: var(--surface-hover);
+        }
+
+        .product-cell {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .product-img {
+            width: 44px;
+            height: 44px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+            background: #1E2330;
+        }
+
+        .product-title {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .product-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-active {
+            background: var(--success-bg);
+            color: var(--success-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-inactive {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--text-muted);
+            border: 1px solid rgba(107, 114, 128, 0.2);
+        }
+
+        .badge-warning {
+            background: var(--danger-bg);
+            color: var(--danger-rose);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
+        }
+
+        .badge-normal {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .empty-state {
+            padding: 5rem 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .loading {
+            padding: 4rem;
+            text-align: center;
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <h1>Sintaxis <span>KYŪ V1.0</span></h1>
+            <p>Sistema de control e inspección de catálogo de productos (Dark Mode)</p>
+        </div>
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="cargarProductos()">
+                ⚡ Sincronizar API
+            </button>
+        </div>
+    </header>
+
+    <div class="metrics-bar">
+        <div class="metric-card accent">
+            <div class="label">Total Productos</div>
+            <div class="value" id="metric-total">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="label">Activos en Catálogo</div>
+            <div class="value" id="metric-activos">0</div>
+        </div>
+        <div class="metric-card danger">
+            <div class="label">Alertas Stock Crítico</div>
+            <div class="value" id="metric-stock-bajo" style="color: var(--danger-rose);">0</div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="filters">
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre, marca o categoría..." oninput="filtrarProductos()">
+            <select id="filterEstado" class="select-filter" onchange="filtrarProductos()">
+                <option value="todos">Todos los estados</option>
+                <option value="activos">Solo activos</option>
+                <option value="stock-bajo">Stock bajo / crítico</option>
+            </select>
+        </div>
+        <div class="endpoint-info" style="font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">
+            GET /api/productos
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Categoría / Marca</th>
+                    <th>Precio</th>
+                    <th>Stock / Min</th>
+                    <th>Estado</th>
+                    <th>Fecha Alta</th>
+                </tr>
+            </thead>
+            <tbody id="productTableBody">
+                <tr>
+                    <td colspan="6" class="loading">Cargando módulos desde /api/productos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let productosGlobal = [];
+
+        async function cargarProductos() {
+            const tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="loading">Conectando con el núcleo API...</td></tr>`;
+
+            try {
+                const response = await fetch('/api/productos');
+                if (!response.ok) throw new Error('Error al conectar con la API de productos');
+                
+                productosGlobal = await response.json();
+                renderizarProductos(productosGlobal);
+                actualizarMetricas(productosGlobal);
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: var(--danger-rose);">
+                    <strong>Error de conexión con el servidor</strong>
+                    <p>No se pudo obtener la información de <code>/api/productos</code>. Verifique el estado de Spring Boot.</p>
+                </td></tr>`;
+            }
+        }
+
+        function renderizarProductos(productos) {
+            const tbody = document.getElementById('productTableBody');
+            
+            if (productos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">
+                    <strong>No se registraron elementos</strong>
+                    <p>El inventario se encuentra vacío o no hay coincidencias con el filtro actual.</p>
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = productos.map(p => {
+                const esStockBajo = p.stock <= p.stockMinimo;
+                const imagenDefault = p.imagenUrl && p.imagenUrl.trim() !== '' 
+                    ? p.imagenUrl 
+                    : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60';
+
+                const fechaFormateada = p.fechaAlta 
+                    ? new Date(p.fechaAlta).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                    : 'N/D';
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="product-cell">
+                                <img src="${imagenDefault}" alt="${p.nombre}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60'">
+                                <div>
+                                    <div class="product-title">${escapeHtml(p.nombre)}</div>
+                                    <div class="product-desc" title="${escapeHtml(p.descripcion || '')}">${escapeHtml(p.descripcion || 'Sin descripción')}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-normal">${escapeHtml(p.categoria || 'General')}</span>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">${escapeHtml(p.marca || 'Genérica')}</div>
+                        </td>
+                        <td>
+                            <span class="mono" style="font-weight: 600; color: var(--accent-cyan);">$${Number(p.precio || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span>
+                        </td>
+                        <td>
+                            <span class="mono ${esStockBajo ? 'badge badge-warning' : ''}" style="${esStockBajo ? '' : 'font-weight: 500;'}">
+                                ${p.stock} un.
+                            </span>
+                            <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 0.1rem;">Mín: ${p.stockMinimo}</div>
+                        </td>
+                        <td>
+                            ${p.activo ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>'}
+                        </td>
+                        <td>
+                            <span class="mono" style="font-size: 0.75rem; color: var(--text-secondary);">${fechaFormateada}</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function actualizarMetricas(productos) {
+            const total = productos.length;
+            const activos = productos.filter(p => p.activo).length;
+            const stockBajo = productos.filter(p => p.stock <= p.stockMinimo).length;
+
+            document.getElementById('metric-total').textContent = total;
+            document.getElementById('metric-activos').textContent = activos;
+            document.getElementById('metric-stock-bajo').textContent = stockBajo;
+        }
+
+        function filtrarProductos() {
+            const texto = document.getElementById('searchInput').value.toLowerCase();
+            const filtroEstado = document.getElementById('filterEstado').value;
+
+            const filtrados = productosGlobal.filter(p => {
+                const matchTexto = (p.nombre && p.nombre.toLowerCase().includes(texto)) ||
+                                   (p.marca && p.marca.toLowerCase().includes(texto)) ||
+                                   (p.categoria && p.categoria.toLowerCase().includes(texto));
+
+                if (!matchTexto) return false;
+
+                if (filtroEstado === 'activos') {
+                    return p.activo;
+                } else if (filtroEstado === 'stock-bajo') {
+                    return p.stock <= p.stockMinimo;
+                }
+                return true;
+            });
+
+            renderizarProductos(filtrados);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // Carga inicial
+        cargarProductos();
+    </script>
+</body>
+</html>
