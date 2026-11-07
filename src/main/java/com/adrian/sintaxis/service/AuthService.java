@@ -186,6 +186,18 @@ public class AuthService {
                 .toList();
     }
 
+    public List<UsuarioResponseDTO> listarUsuarios() {
+        return usuarioRepository.findAll().stream()
+                .map(u -> new UsuarioResponseDTO(
+                        u.getIdUsuario(),
+                        u.getNombre(),
+                        u.getEmail(),
+                        u.getRol() != null ? u.getRol().name() : "CLIENTE",
+                        u.isActivo()
+                ))
+                .toList();
+    }
+
     private ClienteResponseDTO toClienteResponseDTO(Cliente cliente) {
         ClienteResponseDTO dto = new ClienteResponseDTO();
         dto.setIdCliente(cliente.getIdCliente());

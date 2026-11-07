@@ -8,6 +8,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -24,6 +25,7 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -104,9 +106,10 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", 
                                 "/v3/api-docs.yaml", "/webjars/**", "/swagger-resources", "/swagger-resources/**").permitAll()
                         
-                        // Endpoints públicos de Auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        // Endpoints públicos de Auth e Imágenes
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/imagenes/**").permitAll()
                         .requestMatchers("/api/auth/perfil").authenticated()
+                        .requestMatchers("/api/auth/usuarios").hasRole(ROLE_ADMIN)
 
                         // Productos - GET público, modificaciones solo ADMIN y EMPLEADO
                         .requestMatchers(HttpMethod.GET, CELULARES_PATH).permitAll()

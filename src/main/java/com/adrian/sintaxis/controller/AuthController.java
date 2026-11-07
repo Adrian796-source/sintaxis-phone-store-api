@@ -30,6 +30,13 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(dto));
     }
 
+    @Operation(summary = "Listar usuarios", description = "Lista todos los usuarios del sistema. Requiere rol ADMIN.")
+    @GetMapping("/usuarios")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UsuarioResponseDTO>> listarUsuarios() {
+        return ResponseEntity.ok(authService.listarUsuarios());
+    }
+
     @Operation(summary = "Login", description = "Autentica al usuario y devuelve un token JWT para usar en los endpoints protegidos.")
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO dto) {

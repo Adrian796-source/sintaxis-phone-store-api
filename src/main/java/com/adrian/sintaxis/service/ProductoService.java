@@ -138,7 +138,7 @@ public class ProductoService implements IProductoService {
             Files.write(rutaCompleta, imagen.getBytes());
 
             // Devolver URL para acceder a la imagen
-            return "/api/productos/imagenes/" + nombreArchivo;
+            return "/api/imagenes/" + nombreArchivo;
 
         } catch (IOException e) {
             throw new ImagenStorageException("Error al guardar la imagen: " + e.getMessage(), e);

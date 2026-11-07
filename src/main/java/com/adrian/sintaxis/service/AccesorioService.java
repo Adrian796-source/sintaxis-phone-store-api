@@ -124,7 +124,7 @@ public class AccesorioService implements IAccesorioService {
             Files.createDirectories(rutaCompleta.getParent());
             Files.write(rutaCompleta, imagen.getBytes());
 
-            return "/api/productos/imagenes/" + nombreArchivo;
+            return "/api/imagenes/" + nombreArchivo;
 
         } catch (IOException e) {
             throw new ImagenStorageException("Error al guardar la imagen: " + e.getMessage(), e);

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sintaxis — Kyū Dark Mode Inventory</title>
+    <link rel="icon" href="data:,">
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -155,26 +156,14 @@
             flex: 1;
         }
 
-        .search-input, .select-filter {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
-            padding: 0.6rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            background: var(--bg-canvas);
-            color: var(--text-main);
-            outline: none;
-            transition: all 0.2s ease;
+        .search-container {
+            position: relative;
+            flex: 1;
+            min-width: 300px;
         }
 
         .search-input {
-            min-width: 300px;
-            flex: 1;
-        }
-
-        .search-input:focus, .select-filter:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px var(--accent-cyan-glow);
+            width: 100%;
         }
 
         .btn {
@@ -336,6 +325,149 @@
             color: var(--accent-cyan);
             font-family: 'JetBrains Mono', monospace;
         }
+
+        /* Cart Drawer / Styles */
+        .cart-drawer {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 400px;
+            height: 100vh;
+            background: var(--surface);
+            border-left: 1px solid var(--border-color);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.3s ease;
+        }
+
+        .cart-drawer.open {
+            right: 0;
+        }
+
+        .cart-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0E1017;
+        }
+
+        .cart-header h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cart-body {
+            padding: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .cart-item {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: var(--bg-canvas);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: var(--radius);
+        }
+
+        .cart-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .cart-item-details {
+            flex: 1;
+        }
+
+        .cart-item-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-main);
+        }
+
+        .cart-item-price {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            margin-top: 0.1rem;
+        }
+
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.4rem;
+        }
+
+        .qty-btn {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qty-btn:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .cart-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            background: #0E1017;
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .cart-total span:last-child {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        .btn-add-cart {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-size: 0.75rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-add-cart:hover {
+            background: var(--accent-cyan);
+            color: #090A0F;
+        }
     </style>
 </head>
 <body>
@@ -345,9 +477,15 @@
             <h1>Sintaxis <span>KYŪ V1.0</span></h1>
             <p>Sistema de control e inspección de catálogo de productos (Dark Mode)</p>
         </div>
-        <div class="actions">
+        <div class="actions" style="display: flex; gap: 0.75rem; align-items: center;">
             <button class="btn btn-secondary" onclick="cargarProductos()">
                 ⚡ Sincronizar API
+            </button>
+            <div id="auth-action-container" style="display: flex; gap: 0.5rem; align-items: center;">
+                <!-- Se llena dinámicamente según sesión (Login / Cerrar Sesión / Panel Admin) -->
+            </div>
+            <button class="btn btn-primary" onclick="toggleCartDrawer()">
+                🛒 Carrito <span id="cart-badge" class="badge badge-active" style="margin-left: 0.25rem;">0</span>
             </button>
         </div>
     </header>
@@ -369,15 +507,19 @@
 
     <div class="toolbar">
         <div class="filters">
-            <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre, marca o categoría..." oninput="filtrarProductos()">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre, marca..." oninput="filtrarProductos()" autocomplete="off">
+            </div>
             <select id="filterEstado" class="select-filter" onchange="filtrarProductos()">
                 <option value="todos">Todos los estados</option>
                 <option value="activos">Solo activos</option>
                 <option value="stock-bajo">Stock bajo / crítico</option>
             </select>
         </div>
-        <div class="endpoint-info" style="font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">
-            GET /api/productos
+        <div class="category-tabs" style="display: flex; gap: 0.5rem; background: var(--bg-canvas); padding: 0.25rem; border: 1px solid var(--border-color); border-radius: var(--radius);">
+            <button class="btn" id="tab-todos" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--accent-cyan); color: #090A0F; border: none; font-weight: 600;" onclick="cambiarTab('todos')">Todos</button>
+            <button class="btn" id="tab-celulares" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: transparent; color: var(--text-secondary); border: none;" onclick="cambiarTab('celulares')">Celulares</button>
+            <button class="btn" id="tab-accesorios" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: transparent; color: var(--text-secondary); border: none;" onclick="cambiarTab('accesorios')">Accesorios</button>
         </div>
     </div>
 
@@ -390,38 +532,467 @@
                     <th>Precio</th>
                     <th>Stock / Min</th>
                     <th>Estado</th>
-                    <th>Fecha Alta</th>
+                    <th>Acción</th>
                 </tr>
             </thead>
             <tbody id="productTableBody">
                 <tr>
-                    <td colspan="6" class="loading">Cargando módulos desde /api/productos...</td>
+                    <td colspan="6" class="loading">Cargando módulos desde /api/celulares y /api/accesorios...</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
+    <!-- Cart Drawer -->
+    <div id="cartDrawer" class="cart-drawer">
+        <div class="cart-header">
+            <h2>🛒 Carrito de Compras</h2>
+            <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="toggleCartDrawer()">✕ Cerrar</button>
+        </div>
+        <div class="cart-body" id="cartItemsContainer">
+            <div class="empty-state" style="padding: 2rem 1rem;">
+                <p>Tu carrito está vacío</p>
+            </div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total a Pagar:</span>
+                <span id="cartTotalAmount">$0.00</span>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="finalizarCompra()">
+                💳 Finalizar Compra
+            </button>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 10, 15, 0.8); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 400px; box-shadow: var(--shadow-kyu); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 600; color: var(--text-main);">🔐 Iniciar Sesión</h2>
+                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="toggleLoginModal(false)">✕</button>
+            </div>
+            <form id="loginForm" onsubmit="ejecutarLogin(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Email</label>
+                    <input type="email" id="loginEmail" class="search-input" required placeholder="ejemplo@sintaxis.com" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.75rem; border-radius: var(--radius);">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Contraseña</label>
+                    <input type="password" id="loginPassword" class="search-input" required placeholder="••••••••" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.75rem; border-radius: var(--radius);">
+                </div>
+                <div id="loginErrorMsg" style="color: var(--danger-rose); font-size: 0.8rem; display: none;"></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 0.5rem; padding: 0.75rem;">
+                    Ingresar al Sistema
+                </button>
+                <div style="text-align: center; margin-top: 0.5rem; font-size: 0.85rem;">
+                    <span style="color: var(--text-secondary);">¿No tienes cuenta?</span> 
+                    <a href="javascript:void(0)" onclick="abrirModalRegistroPublico()" style="color: var(--accent-cyan); text-decoration: none; font-weight: 600; margin-left: 0.3rem;">Crear cuenta</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Public Register Modal -->
+    <div id="registerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 10, 15, 0.8); z-index: 2200; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 450px; box-shadow: var(--shadow-kyu); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 600; color: var(--text-main);">📝 Crear Cuenta</h2>
+                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="toggleRegisterModal(false)">✕</button>
+            </div>
+            <form id="registerForm" onsubmit="ejecutarRegistroPublico(event)" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Nombre *</label>
+                        <input type="text" id="regNombre" required class="search-input" placeholder="Juan" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Apellido *</label>
+                        <input type="text" id="regApellido" required class="search-input" placeholder="Pérez" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Email *</label>
+                    <input type="email" id="regEmail" required class="search-input" placeholder="juan@email.com" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Contraseña (mín 6 car.) *</label>
+                    <input type="password" id="regPassword" required minlength="6" class="search-input" placeholder="••••••••" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Teléfono</label>
+                    <input type="text" id="regTelefono" class="search-input" placeholder="+54 11 1234-5678" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Dirección</label>
+                    <input type="text" id="regDireccion" class="search-input" placeholder="Av. Corrientes 1234" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                </div>
+                <div id="registerErrorMsg" style="color: var(--danger-rose); font-size: 0.8rem; display: none;"></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 0.25rem; padding: 0.7rem;">
+                    Registrarse como Cliente
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Create Modal (Admin) -->
+    <div id="userFormModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 10, 15, 0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(6px); padding: 1.5rem;">
+        <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); width: 100%; max-width: 500px; box-shadow: var(--shadow-kyu); overflow: hidden;">
+            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0E1017;">
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-main);">➕ Registrar Nuevo Usuario (Admin)</h3>
+                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="toggleUserFormModal(false)">✕</button>
+            </div>
+            <form id="userForm" onsubmit="guardarUsuarioAdmin(event)" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Nombre *</label>
+                        <input type="text" id="adminUserNombre" required class="search-input" placeholder="Nombre" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Apellido *</label>
+                        <input type="text" id="adminUserApellido" required class="search-input" placeholder="Apellido" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Email *</label>
+                    <input type="email" id="adminUserEmail" required class="search-input" placeholder="empleado@sintaxis.com" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Contraseña (mín 6 car.) *</label>
+                    <input type="password" id="adminUserPassword" required minlength="6" class="search-input" placeholder="••••••••" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem; width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Rol Asignado *</label>
+                    <select id="adminUserRol" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.85rem;">
+                        <option value="EMPLEADO">EMPLEADO</option>
+                        <option value="CLIENTE">CLIENTE</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </div>
+                <div id="userFormErrorMsg" style="color: var(--danger-rose); font-size: 0.8rem; display: none;"></div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleUserFormModal(false)">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 10, 15, 0.85); z-index: 2500; justify-content: center; align-items: center; backdrop-filter: blur(6px); padding: 2rem;">
+        <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); width: 100%; max-width: 1100px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-kyu); overflow: hidden;">
+            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0E1017;">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                        ⚙️ Panel de Administración <span style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: var(--success-emerald); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.15rem 0.5rem; border-radius: 4px;">CRUD JWT</span>
+                    </h2>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Gestión completa de Celulares y Accesorios con autenticación activa</p>
+                </div>
+                <div id="adminHeaderActions" style="display: flex; gap: 0.75rem; align-items: center;">
+                    <button class="btn btn-primary" onclick="abrirModalFormProducto('crear')">
+                        ➕ Nuevo Producto
+                    </button>
+                    <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem;" onclick="toggleAdminModal(false)">✕ Cerrar</button>
+                </div>
+            </div>
+
+            <!-- Admin Toolbar -->
+            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); background: var(--bg-canvas); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                <input type="text" id="adminSearchInput" class="search-input" placeholder="Buscar producto en panel admin..." oninput="filtrarProductosAdmin()" style="background: var(--surface); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.5rem 0.8rem; border-radius: var(--radius); width: 320px; font-size: 0.85rem;">
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn" id="admin-tab-todos" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: var(--accent-cyan); color: #090A0F; border: none; font-weight: 600;" onclick="cambiarAdminTab('todos')">Todos</button>
+                    <button class="btn" id="admin-tab-celulares" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color);" onclick="cambiarAdminTab('celulares')">Celulares</button>
+                    <button class="btn" id="admin-tab-accesorios" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color);" onclick="cambiarAdminTab('accesorios')">Accesorios</button>
+                    <button class="btn" id="admin-tab-usuarios" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color);" onclick="cambiarAdminTab('usuarios')">👥 Usuarios</button>
+                </div>
+            </div>
+
+            <!-- Admin Table Container for Products -->
+            <div id="adminProductsSection" style="flex: 1; overflow-y: auto; padding: 0;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                    <thead style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">ID / Producto</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Categoría / Marca</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Precio</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Stock</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Estado</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem; text-align: right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminProductTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Cargando inventario de administración...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Admin Table Container for Users -->
+            <div id="adminUsersSection" style="display: none; flex: 1; overflow-y: auto; padding: 0;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                    <thead style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">ID / Nombre</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Email</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Rol</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Estado</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem; text-align: right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUserTableBody">
+                        <tr>
+                            <td colspan="5" class="loading">Cargando usuarios...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Create/Edit Modal -->
+    <div id="productFormModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 10, 15, 0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(6px); padding: 1.5rem;">
+        <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); width: 100%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-kyu); overflow: hidden;">
+            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0E1017;">
+                <h3 id="productFormTitle" style="font-size: 1.125rem; font-weight: 600; color: var(--text-main);">➕ Registrar Nuevo Producto</h3>
+                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="toggleProductFormModal(false)">✕</button>
+            </div>
+            <form id="productForm" onsubmit="guardarProductoAdmin(event)" style="padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+                <input type="hidden" id="formProductId">
+                
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Tipo de Producto *</label>
+                    <select id="formTipoProducto" onchange="actualizarCamposTipoForm()" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        <option value="celular">Celular</option>
+                        <option value="accesorio">Accesorio</option>
+                    </select>
+                </div>
+
+                <!-- Campos Comunes -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Nombre *</label>
+                        <input type="text" id="formNombre" required class="search-input" placeholder="Ej: iPhone 15 Pro / Funda MagSafe" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem; width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Marca *</label>
+                        <input type="text" id="formMarca" required class="search-input" placeholder="Ej: Apple, Samsung" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem; width: 100%;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Descripción</label>
+                    <textarea id="formDescripcion" rows="2" placeholder="Detalles del producto..." style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Precio ($) *</label>
+                        <input type="number" step="0.01" min="0.01" id="formPrecio" required style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Stock Actual *</label>
+                        <input type="number" min="0" id="formStock" required style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Stock Mínimo *</label>
+                        <input type="number" min="0" id="formStockMinimo" required value="5" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">URL de la Imagen</label>
+                    <input type="url" id="formImagenUrl" placeholder="https://..." style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                </div>
+
+                <!-- Campos Específicos Celular -->
+                <div id="camposCelularGroup" style="display: flex; flex-direction: column; gap: 1rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-cyan); text-transform: uppercase;">📱 Especificaciones de Celular</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Modelo *</label>
+                            <input type="text" id="formModelo" placeholder="Ej: Galaxy S24" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Sistema Operativo *</label>
+                            <input type="text" id="formSistemaOperativo" placeholder="Ej: Android 14, iOS 17" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Almacenamiento (GB) *</label>
+                            <input type="number" min="1" id="formAlmacenamientoGB" value="128" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">RAM (GB) *</label>
+                            <input type="number" min="1" id="formRamGB" value="8" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Procesador *</label>
+                            <input type="text" id="formProcesador" placeholder="Ej: Snapdragon 8 Gen 3" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Pantalla (Pulgadas) *</label>
+                            <input type="number" step="0.1" min="0.1" id="formPantallaPulgadas" value="6.5" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Batería (mAh) *</label>
+                            <input type="number" min="1" id="formBateriaMAh" value="5000" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Color</label>
+                            <input type="text" id="formColorCelular" placeholder="Ej: Negro, Titanium" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-main); cursor: pointer;">
+                            <input type="checkbox" id="formEsLibre" checked style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
+                            Equipos liberado (Sin compañía)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Campos Específicos Accesorio -->
+                <div id="camposAccesorioGroup" style="display: none; flex-direction: column; gap: 1rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-cyan); text-transform: uppercase;">🎧 Especificaciones de Accesorio</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Tipo de Accesorio *</label>
+                            <select id="formTipoAccesorio" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                                <option value="Funda">Funda</option>
+                                <option value="Protector de Pantalla">Protector de Pantalla</option>
+                                <option value="Cargador">Cargador</option>
+                                <option value="Auriculares">Auriculares</option>
+                                <option value="Cable">Cable</option>
+                                <option value="Soporte">Soporte</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Material</label>
+                            <input type="text" id="formMaterial" placeholder="Ej: Silicona, Vidrio Templado" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Color</label>
+                            <input type="text" id="formColorAccesorio" placeholder="Ej: Transparente, Negro" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Marcas Compatibles (separadas por coma)</label>
+                            <input type="text" id="formMarcasCompatibles" placeholder="Ej: Apple, Samsung" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-main); cursor: pointer;">
+                            <input type="checkbox" id="formEsOriginal" checked style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
+                            Producto Original
+                        </label>
+                    </div>
+                </div>
+
+                <div id="productFormErrorMsg" style="color: var(--danger-rose); font-size: 0.85rem; display: none;"></div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleProductFormModal(false)">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitForm">Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        let productosGlobal = [];
+        let celularesGlobal = [];
+        let accesoriosGlobal = [];
+        let categoriaActiva = 'todos';
 
         async function cargarProductos() {
             const tbody = document.getElementById('productTableBody');
-            tbody.innerHTML = `<tr><td colspan="6" class="loading">Conectando con el núcleo API...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="loading">Conectando con el núcleo API (/api/celulares y /api/accesorios)...</td></tr>`;
 
             try {
-                const response = await fetch('/api/productos');
-                if (!response.ok) throw new Error('Error al conectar con la API de productos');
-                
-                productosGlobal = await response.json();
-                renderizarProductos(productosGlobal);
-                actualizarMetricas(productosGlobal);
+                const [resCelulares, resAccesorios] = await Promise.all([
+                    fetch('/api/celulares'),
+                    fetch('/api/accesorios')
+                ]);
+
+                let dataCelulares = [];
+                let dataAccesorios = [];
+
+                if (resCelulares.ok) {
+                    const jsonC = await resCelulares.json();
+                    dataCelulares = Array.isArray(jsonC) ? jsonC : (jsonC.content || []);
+                }
+
+                if (resAccesorios.ok) {
+                    const jsonA = await resAccesorios.json();
+                    dataAccesorios = Array.isArray(jsonA) ? jsonA : (jsonA.content || []);
+                }
+
+                celularesGlobal = dataCelulares.map(p => ({ ...p, _tipo: 'celular' }));
+                accesoriosGlobal = dataAccesorios.map(p => ({ ...p, _tipo: 'accesorio' }));
+
+                filtrarProductos();
+                actualizarMetricas([...celularesGlobal, ...accesoriosGlobal]);
             } catch (error) {
                 console.error(error);
                 tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: var(--danger-rose);">
                     <strong>Error de conexión con el servidor</strong>
-                    <p>No se pudo obtener la información de <code>/api/productos</code>. Verifique el estado de Spring Boot.</p>
+                    <p>No se pudo obtener la información de <code>/api/celulares</code> y <code>/api/accesorios</code>. Verifique el estado de Spring Boot.</p>
                 </td></tr>`;
             }
+        }
+
+        function cambiarTab(tab) {
+            categoriaActiva = tab;
+            ['todos', 'celulares', 'accesorios'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    btn.style.background = 'var(--accent-cyan)';
+                    btn.style.color = '#090A0F';
+                    btn.style.fontWeight = '600';
+                } else {
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'var(--text-secondary)';
+                    btn.style.fontWeight = '400';
+                }
+            });
+            filtrarProductos();
+        }
+
+        function filtrarProductos() {
+            let fuente = [];
+            if (categoriaActiva === 'todos') {
+                fuente = [...celularesGlobal, ...accesoriosGlobal];
+            } else if (categoriaActiva === 'celulares') {
+                fuente = celularesGlobal;
+            } else if (categoriaActiva === 'accesorios') {
+                fuente = accesoriosGlobal;
+            }
+
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const estadoFiltro = document.getElementById('filterEstado').value;
+
+            const filtrados = fuente.filter(p => {
+                const matchQuery = !query || 
+                    (p.nombre && p.nombre.toLowerCase().includes(query)) ||
+                    (p.marca && p.marca.toLowerCase().includes(query)) ||
+                    (p.descripcion && p.descripcion.toLowerCase().includes(query)) ||
+                    (p.modelo && p.modelo.toLowerCase().includes(query));
+
+                let matchEstado = true;
+                if (estadoFiltro === 'activos') {
+                    matchEstado = p.activo === true;
+                } else if (estadoFiltro === 'stock-bajo') {
+                    matchEstado = p.stock <= p.stockMinimo;
+                }
+
+                return matchQuery && matchEstado;
+            });
+
+            renderizarProductos(filtrados);
         }
 
         function renderizarProductos(productos) {
@@ -429,8 +1000,8 @@
             
             if (productos.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="empty-state">
-                    <strong>No se registraron elementos</strong>
-                    <p>El inventario se encuentra vacío o no hay coincidencias con el filtro actual.</p>
+                    <strong>No se encontraron productos que coincidan con tu búsqueda. Intenta con otra palabra.</strong>
+                    <p>Verifique los términos ingresados o pruebe cambiando de categoría.</p>
                 </td></tr>`;
                 return;
             }
@@ -438,18 +1009,18 @@
             tbody.innerHTML = productos.map(p => {
                 const esStockBajo = p.stock <= p.stockMinimo;
                 const imagenDefault = p.imagenUrl && p.imagenUrl.trim() !== '' 
-                    ? p.imagenUrl 
+                    ? (p.imagenUrl.startsWith('http://localhost:8080/api/productos/') 
+                        ? p.imagenUrl.replace('/api/productos/', '/api/imagenes/') 
+                        : p.imagenUrl)
                     : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60';
 
-                const fechaFormateada = p.fechaAlta 
-                    ? new Date(p.fechaAlta).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                    : 'N/D';
+                const tipoBadge = p._tipo === 'celular' ? 'Celular' : 'Accesorio';
 
                 return `
                     <tr>
                         <td>
                             <div class="product-cell">
-                                <img src="${imagenDefault}" alt="${p.nombre}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60'">
+                                <img src="${imagenDefault}" alt="${p.nombre}" class="product-img"
                                 <div>
                                     <div class="product-title">${escapeHtml(p.nombre)}</div>
                                     <div class="product-desc" title="${escapeHtml(p.descripcion || '')}">${escapeHtml(p.descripcion || 'Sin descripción')}</div>
@@ -457,7 +1028,7 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge badge-normal">${escapeHtml(p.categoria || 'General')}</span>
+                            <span class="badge badge-normal">${tipoBadge}</span>
                             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">${escapeHtml(p.marca || 'Genérica')}</div>
                         </td>
                         <td>
@@ -473,7 +1044,9 @@
                             ${p.activo ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>'}
                         </td>
                         <td>
-                            <span class="mono" style="font-size: 0.75rem; color: var(--text-secondary);">${fechaFormateada}</span>
+                            <button class="btn-add-cart" onclick='agregarAlCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+                                + Agregar al carrito
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -490,28 +1063,6 @@
             document.getElementById('metric-stock-bajo').textContent = stockBajo;
         }
 
-        function filtrarProductos() {
-            const texto = document.getElementById('searchInput').value.toLowerCase();
-            const filtroEstado = document.getElementById('filterEstado').value;
-
-            const filtrados = productosGlobal.filter(p => {
-                const matchTexto = (p.nombre && p.nombre.toLowerCase().includes(texto)) ||
-                                   (p.marca && p.marca.toLowerCase().includes(texto)) ||
-                                   (p.categoria && p.categoria.toLowerCase().includes(texto));
-
-                if (!matchTexto) return false;
-
-                if (filtroEstado === 'activos') {
-                    return p.activo;
-                } else if (filtroEstado === 'stock-bajo') {
-                    return p.stock <= p.stockMinimo;
-                }
-                return true;
-            });
-
-            renderizarProductos(filtrados);
-        }
-
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>'"]/g, 
@@ -519,7 +1070,828 @@
             );
         }
 
+        // --- Carrito de Compras ---
+        let carrito = JSON.parse(localStorage.getItem('sintaxis_carrito')) || [];
+
+        function toggleCartDrawer() {
+            const drawer = document.getElementById('cartDrawer');
+            drawer.classList.toggle('open');
+        }
+
+        function guardarCarrito() {
+            localStorage.setItem('sintaxis_carrito', JSON.stringify(carrito));
+            actualizarContadorCarrito();
+            renderizarCarrito();
+        }
+
+        function actualizarContadorCarrito() {
+            const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+            document.getElementById('cart-badge').textContent = totalItems;
+        }
+
+        function agregarAlCarrito(producto) {
+            const idProd = producto.idProducto || producto.id;
+            const existente = carrito.find(item => (item.idProducto || item.id) === idProd);
+            
+            if (existente) {
+                if (existente.cantidad < producto.stock) {
+                    existente.cantidad++;
+                } else {
+                    alert('No hay suficiente stock disponible.');
+                    return;
+                }
+            } else {
+                if (producto.stock > 0) {
+                    carrito.push({ ...producto, cantidad: 1 });
+                } else {
+                    alert('Producto sin stock.');
+                    return;
+                }
+            }
+            guardarCarrito();
+            
+            // Abrir automáticamente el drawer o dar aviso sutil
+            const drawer = document.getElementById('cartDrawer');
+            if (!drawer.classList.contains('open')) {
+                toggleCartDrawer();
+            }
+        }
+
+        function cambiarCantidad(idProducto, delta) {
+            const index = carrito.findIndex(item => (item.idProducto || item.id) === idProducto);
+            if (index !== -1) {
+                carrito[index].cantidad += delta;
+                if (carrito[index].cantidad <= 0) {
+                    carrito.splice(index, 1);
+                } else {
+                    const item = carrito[index];
+                    if (item.cantidad > item.stock) {
+                        item.cantidad = item.stock;
+                        alert('Ha alcanzado el límite de stock disponible.');
+                    }
+                }
+                guardarCarrito();
+            }
+        }
+
+        function eliminarDelCarrito(idProducto) {
+            carrito = carrito.filter(item => (item.idProducto || item.id) !== idProducto);
+            guardarCarrito();
+        }
+
+        function renderizarCarrito() {
+            const container = document.getElementById('cartItemsContainer');
+            const totalAmountEl = document.getElementById('cartTotalAmount');
+
+            if (carrito.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 2rem 1rem;">
+                        <p>Tu carrito está vacío</p>
+                    </div>
+                `;
+                totalAmountEl.textContent = '$0.00';
+                return;
+            }
+
+            let total = 0;
+            container.innerHTML = carrito.map(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                const img = item.imagenUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60';
+                const idProd = item.idProducto || item.id;
+
+                return `
+                    <div class="cart-item">
+                        <img src="${img}" alt="${item.nombre}" onerror="this.onerror="this.style.display='none'">
+
+                        <div class="cart-item-details">
+                            <div class="cart-item-title">${escapeHtml(item.nombre)}</div>
+                            <div class="cart-item-price">$${Number(item.precio).toLocaleString('es-ES', { minimumFractionDigits: 2 })} c/u</div>
+                            <div class="cart-item-controls">
+                                <button class="qty-btn" onclick="cambiarCantidad(${idProd}, -1)">-</button>
+                                <span class="mono" style="font-size: 0.8rem; font-weight: 600;">${item.cantidad}</span>
+                                <button class="qty-btn" onclick="cambiarCantidad(${idProd}, 1)">+</button>
+                                <button class="btn btn-secondary" style="padding: 0.1rem 0.4rem; font-size: 0.7rem; margin-left: auto; color: var(--danger-rose); border-color: rgba(244,63,94,0.3);" onclick="eliminarDelCarrito(${idProd})">Eliminar</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            totalAmountEl.textContent = '$' + total.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+        }
+
+        function finalizarCompra() {
+            if (carrito.length === 0) {
+                alert('El carrito está vacío.');
+                return;
+            }
+            alert('¡Compra simulada con éxito! Gracias por su pedido en Sintaxis Kyū.');
+            carrito = [];
+            guardarCarrito();
+            toggleCartDrawer();
+        }
+
+        // --- Autenticación y Control de Sesión ---
+        function actualizarUIAuth() {
+            const container = document.getElementById('auth-action-container');
+            const token = localStorage.getItem('sintaxis_token');
+            const rol = localStorage.getItem('sintaxis_rol');
+
+            if (!token) {
+                container.innerHTML = `
+                    <button class="btn btn-secondary" onclick="toggleLoginModal(true)">
+                        🔑 Iniciar Sesión
+                    </button>
+                `;
+            } else {
+                let html = `
+                    <button class="btn btn-secondary" style="color: var(--danger-rose); border-color: rgba(244,63,94,0.3);" onclick="cerrarSesion()">
+                        🚪 Cerrar Sesión
+                    </button>
+                `;
+                if (rol === 'ADMIN' || rol === 'EMPLEADO') {
+                    html += `
+                        <button class="btn btn-primary" style="background: rgba(16, 185, 129, 0.15); color: var(--success-emerald); border-color: rgba(16, 185, 129, 0.3);" onclick="irPanelAdmin()">
+                            ⚙️ Panel Admin
+                        </button>
+                    `;
+                }
+                container.innerHTML = html;
+            }
+        }
+
+        function toggleLoginModal(abrir) {
+            const modal = document.getElementById('loginModal');
+            const errorMsg = document.getElementById('loginErrorMsg');
+            errorMsg.style.display = 'none';
+            errorMsg.textContent = '';
+            if (abrir) {
+                modal.style.display = 'flex';
+                document.getElementById('loginEmail').focus();
+            } else {
+                modal.style.display = 'none';
+                document.getElementById('loginForm').reset();
+            }
+        }
+
+        async function ejecutarLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorMsg = document.getElementById('loginErrorMsg');
+
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Credenciales inválidas o error en el servidor.');
+                }
+
+                const data = await response.json();
+                
+                // Guardar token y rol en localStorage
+                localStorage.setItem('sintaxis_token', data.token);
+                localStorage.setItem('sintaxis_rol', data.rol);
+                localStorage.setItem('sintaxis_email', data.email);
+
+                toggleLoginModal(false);
+                actualizarUIAuth();
+                alert(`¡Bienvenido de nuevo, ${data.email} (${data.rol})!`);
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = err.message || 'Error al iniciar sesión.';
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        async function cerrarSesion() {
+            const token = localStorage.getItem('sintaxis_token');
+            try {
+                if (token) {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Error al notificar logout al servidor', e);
+            } finally {
+                localStorage.removeItem('sintaxis_token');
+                localStorage.removeItem('sintaxis_rol');
+                localStorage.removeItem('sintaxis_email');
+                actualizarUIAuth();
+                alert('Sesión cerrada correctamente.');
+            }
+        }
+
+        function irPanelAdmin() {
+            toggleAdminModal(true);
+        }
+
+        // --- Registro Público & Gestión de Usuarios ---
+        function toggleRegisterModal(abrir) {
+            const modal = document.getElementById('registerModal');
+            const errorMsg = document.getElementById('registerErrorMsg');
+            if (errorMsg) {
+                errorMsg.style.display = 'none';
+                errorMsg.textContent = '';
+            }
+            if (modal) {
+                modal.style.display = abrir ? 'flex' : 'none';
+            }
+        }
+
+        function abrirModalRegistroPublico() {
+            toggleLoginModal(false);
+            const form = document.getElementById('registerForm');
+            if (form) form.reset();
+            toggleRegisterModal(true);
+        }
+
+        async function ejecutarRegistroPublico(event) {
+            event.preventDefault();
+            const errorMsg = document.getElementById('registerErrorMsg');
+            errorMsg.style.display = 'none';
+
+            const nombre = document.getElementById('regNombre').value.trim();
+            const apellido = document.getElementById('regApellido').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const telefono = document.getElementById('regTelefono').value.trim();
+            const direccion = document.getElementById('regDireccion').value.trim();
+
+            const dto = {
+                nombre,
+                apellido,
+                email,
+                password,
+                rol: 'CLIENTE',
+                telefono,
+                direccion
+            };
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    throw new Error(errJson.message || 'Error al registrar la cuenta.');
+                }
+
+                const data = await res.json();
+                localStorage.setItem('sintaxis_token', data.token);
+                localStorage.setItem('sintaxis_rol', data.rol);
+                localStorage.setItem('sintaxis_email', data.email);
+
+                toggleRegisterModal(false);
+                actualizarUIAuth();
+                alert(`¡Cuenta creada con éxito! Bienvenido, ${data.email}`);
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = err.message || 'Error al registrarse.';
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        let usuariosGlobal = [];
+
+        function toggleUserFormModal(abrir) {
+            const modal = document.getElementById('userFormModal');
+            const errorMsg = document.getElementById('userFormErrorMsg');
+            if (errorMsg) {
+                errorMsg.style.display = 'none';
+                errorMsg.textContent = '';
+            }
+            if (modal) {
+                modal.style.display = abrir ? 'flex' : 'none';
+            }
+        }
+
+        function abrirModalNuevoUsuarioAdmin() {
+            const form = document.getElementById('userForm');
+            if (form) form.reset();
+            toggleUserFormModal(true);
+        }
+
+        async function cargarUsuariosAdmin() {
+            const token = localStorage.getItem('sintaxis_token');
+            const tbody = document.getElementById('adminUserTableBody');
+            if (!tbody) return;
+
+            if (!token) {
+                alert('Sesión expirada o no iniciada.');
+                localStorage.removeItem('sintaxis_token');
+                localStorage.removeItem('sintaxis_rol');
+                localStorage.removeItem('sintaxis_email');
+                toggleAdminModal(false);
+                actualizarUIAuth();
+                toggleLoginModal(true);
+                return;
+            }
+
+            tbody.innerHTML = `<tr><td colspan="5" class="loading">Cargando usuarios desde /api/auth/usuarios...</td></tr>`;
+
+            try {
+                const res = await fetch('/api/auth/usuarios', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    localStorage.removeItem('sintaxis_token');
+                    localStorage.removeItem('sintaxis_rol');
+                    localStorage.removeItem('sintaxis_email');
+                    actualizarUIAuth();
+                    toggleAdminModal(false);
+                    alert('Su sesión ha expirado o no tiene permisos de Administrador. Por favor, vuelva a iniciar sesión.');
+                    toggleLoginModal(true);
+                    return;
+                }
+
+                if (!res.ok) {
+                    throw new Error('Error al cargar la lista de usuarios. Status: ' + res.status);
+                }
+
+                usuariosGlobal = await res.json();
+                renderizarTablaUsuarios(usuariosGlobal);
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color: var(--danger-rose);">Error al cargar usuarios: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        function renderizarTablaUsuarios(usuarios) {
+            const tbody = document.getElementById('adminUserTableBody');
+            if (!tbody) return;
+
+            if (usuarios.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="padding: 3rem 1rem;">No hay usuarios registrados.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = usuarios.map(u => {
+                let badgeRol = 'badge-normal';
+                if (u.rol === 'ADMIN') badgeRol = 'badge-warning';
+                else if (u.rol === 'EMPLEADO') badgeRol = 'badge-active';
+
+                return `
+                    <tr>
+                        <td style="padding: 0.8rem 1rem;">
+                            <div class="product-title" style="font-size: 0.85rem;">${escapeHtml(u.nombre)}</div>
+                            <div style="font-size: 0.70rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">ID: #${u.idUsuario}</div>
+                        </td>
+                        <td style="padding: 0.8rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">
+                            ${escapeHtml(u.email)}
+                        </td>
+                        <td style="padding: 0.8rem 1rem;">
+                            <span class="badge ${badgeRol}">${u.rol}</span>
+                        </td>
+                        <td style="padding: 0.8rem 1rem;">
+                            ${u.activo !== false ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>'}
+                        </td>
+                        <td style="padding: 0.8rem 1rem; text-align: right;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Sistema</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function guardarUsuarioAdmin(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('sintaxis_token');
+            const errorMsg = document.getElementById('userFormErrorMsg');
+            errorMsg.style.display = 'none';
+
+            const nombre = document.getElementById('adminUserNombre').value.trim();
+            const apellido = document.getElementById('adminUserApellido').value.trim();
+            const email = document.getElementById('adminUserEmail').value.trim();
+            const password = document.getElementById('adminUserPassword').value;
+            const rol = document.getElementById('adminUserRol').value;
+
+            const dto = { nombre, apellido, email, password, rol };
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(dto)
+                });
+
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    throw new Error(errJson.message || 'Error al crear el usuario.');
+                }
+
+                alert(`¡Usuario ${rol} creado con éxito!`);
+                toggleUserFormModal(false);
+                cargarUsuariosAdmin();
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = err.message || 'Error al crear usuario.';
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        // --- Panel Admin & CRUD con JWT ---
+        let adminTabActiva = 'todos';
+
+        function toggleAdminModal(abrir) {
+            const modal = document.getElementById('adminModal');
+            if (abrir) {
+                modal.style.display = 'flex';
+                cambiarAdminTab('todos');
+            } else {
+                modal.style.display = 'none';
+            }
+        }
+
+        function cambiarAdminTab(tab) {
+            adminTabActiva = tab;
+            const btnNuevoProd = document.getElementById('btnNuevoProductoContainer');
+            const prodSection = document.getElementById('adminProductsSection');
+            const userSection = document.getElementById('adminUsersSection');
+            const searchInput = document.getElementById('adminSearchInput');
+
+            ['todos', 'celulares', 'accesorios', 'usuarios'].forEach(t => {
+                const btn = document.getElementById(`admin-tab-${t}`);
+                if (btn) {
+                    if (t === tab) {
+                        btn.style.background = 'var(--accent-cyan)';
+                        btn.style.color = '#090A0F';
+                        btn.style.fontWeight = '600';
+                        btn.style.border = 'none';
+                    } else {
+                        btn.style.background = 'transparent';
+                        btn.style.color = 'var(--text-secondary)';
+                        btn.style.fontWeight = '400';
+                        btn.style.border = '1px solid var(--border-color)';
+                    }
+                }
+            });
+
+            if (tab === 'usuarios') {
+                if (prodSection) prodSection.style.display = 'none';
+                if (userSection) userSection.style.display = 'block';
+                if (searchInput) searchInput.style.display = 'none';
+                
+                // Botón dinámico superior derecho para nuevo usuario o producto
+                const headerActionsContainer = document.querySelector('#adminModal div > div > div:last-child');
+                const existingBtn = document.getElementById('btnAdminAccionPrincipal');
+                if (existingBtn) existingBtn.remove();
+
+                if (headerActionsContainer) {
+                    const newBtn = document.createElement('button');
+                    newBtn.id = 'btnAdminAccionPrincipal';
+                    newBtn.className = 'btn btn-primary';
+                    newBtn.innerHTML = '➕ Nuevo Usuario';
+                    newBtn.onclick = abrirModalNuevoUsuarioAdmin;
+                    headerActionsContainer.prepend(newBtn);
+                }
+
+                cargarUsuariosAdmin();
+            } else {
+                if (prodSection) prodSection.style.display = 'block';
+                if (userSection) userSection.style.display = 'none';
+                if (searchInput) searchInput.style.display = 'block';
+
+                const headerActionsContainer = document.querySelector('#adminModal div > div > div:last-child');
+                const existingBtn = document.getElementById('btnAdminAccionPrincipal');
+                if (existingBtn) existingBtn.remove();
+
+                if (headerActionsContainer) {
+                    const newBtn = document.createElement('button');
+                    newBtn.id = 'btnAdminAccionPrincipal';
+                    newBtn.className = 'btn btn-primary';
+                    newBtn.innerHTML = '➕ Nuevo Producto';
+                    newBtn.onclick = () => abrirModalFormProducto('crear');
+                    headerActionsContainer.prepend(newBtn);
+                }
+
+                filtrarProductosAdmin();
+            }
+        }
+
+        function cargarProductosAdmin() {
+            filtrarProductosAdmin();
+        }
+
+        function filtrarProductosAdmin() {
+            let fuente = [];
+            if (adminTabActiva === 'todos') {
+                fuente = [...celularesGlobal, ...accesoriosGlobal];
+            } else if (adminTabActiva === 'celulares') {
+                fuente = celularesGlobal;
+            } else if (adminTabActiva === 'accesorios') {
+                fuente = accesoriosGlobal;
+            }
+
+            const query = (document.getElementById('adminSearchInput')?.value || '').trim().toLowerCase();
+
+            const filtrados = fuente.filter(p => {
+                return !query ||
+                    (p.nombre && p.nombre.toLowerCase().includes(query)) ||
+                    (p.marca && p.marca.toLowerCase().includes(query)) ||
+                    (p.descripcion && p.descripcion.toLowerCase().includes(query)) ||
+                    (p.modelo && p.modelo.toLowerCase().includes(query));
+            });
+
+            renderizarTablaAdmin(filtrados);
+        }
+
+        function renderizarTablaAdmin(productos) {
+            const tbody = document.getElementById('adminProductTableBody');
+            if (!tbody) return;
+
+            if (productos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="padding: 3rem 1rem;">
+                    <strong>No hay productos registrados o coincidentes.</strong>
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = productos.map(p => {
+                const idProd = p.idProducto || p.id;
+                const tipo = p._tipo;
+                const imagenDefault = p.imagenUrl && p.imagenUrl.trim() !== ''
+                    ? (p.imagenUrl.startsWith('http://localhost:8080/api/productos/') 
+                        ? p.imagenUrl.replace('/api/productos/', '/api/imagenes/') 
+                        : p.imagenUrl)
+                    : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60';
+                const esStockBajo = p.stock <= p.stockMinimo;
+
+                return `
+                    <tr>
+                        <td style="padding: 0.8rem 1rem;">
+                            <div class="product-cell">
+                                <img src="${imagenDefault}" alt="${p.nombre}" class="product-img" style="width: 36px; height: 36px;" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%236B7280\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21 15 16 10 5 21\'/></svg>';">
+                                <div>
+                                    <div class="product-title" style="font-size: 0.85rem;">${escapeHtml(p.nombre)}</div>
+                                    <div style="font-size: 0.70rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">ID: #${idProd}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 0.8rem 1rem;">
+                            <span class="badge badge-normal" style="font-size: 0.7rem;">${tipo === 'celular' ? 'Celular' : 'Accesorio'}</span>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.1rem;">${escapeHtml(p.marca || 'Genérica')}</div>
+                        </td>
+                        <td style="padding: 0.8rem 1rem;">
+                            <span class="mono" style="font-weight: 600; color: var(--accent-cyan);">$${Number(p.precio || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span>
+                        </td>
+                        <td style="padding: 0.8rem 1rem;">
+                            <span class="mono ${esStockBajo ? 'badge badge-warning' : ''}" style="${esStockBajo ? '' : 'font-weight: 500;'}">
+                                ${p.stock} un.
+                            </span>
+                        </td>
+                        <td style="padding: 0.8rem 1rem;">
+                            ${p.activo !== false ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>'}
+                        </td>
+                        <td style="padding: 0.8rem 1rem; text-align: right;">
+                            <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+                                <button class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="prepararEditarProducto(${idProd}, '${tipo}')">
+                                    ✏️ Editar
+                                </button>
+                                <button class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; color: var(--danger-rose); border-color: rgba(244,63,94,0.3);" onclick="eliminarProductoAdmin(${idProd}, '${tipo}', '${escapeHtml(p.nombre)}')">
+                                    🗑️ Eliminar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function toggleProductFormModal(abrir) {
+            const modal = document.getElementById('productFormModal');
+            const errorMsg = document.getElementById('productFormErrorMsg');
+            if (errorMsg) {
+                errorMsg.style.display = 'none';
+                errorMsg.textContent = '';
+            }
+            if (modal) {
+                modal.style.display = abrir ? 'flex' : 'none';
+            }
+        }
+
+        function actualizarCamposTipoForm() {
+            const tipo = document.getElementById('formTipoProducto').value;
+            const camposCelular = document.getElementById('camposCelularGroup');
+            const camposAccesorio = document.getElementById('camposAccesorioGroup');
+
+            if (tipo === 'celular') {
+                camposCelular.style.display = 'flex';
+                camposAccesorio.style.display = 'none';
+            } else {
+                camposCelular.style.display = 'none';
+                camposAccesorio.style.display = 'flex';
+            }
+        }
+
+        function abrirModalFormProducto(modo, producto = null) {
+            const form = document.getElementById('productForm');
+            if (form) form.reset();
+
+            const title = document.getElementById('productFormTitle');
+            const selectTipo = document.getElementById('formTipoProducto');
+            const btnSubmit = document.getElementById('btnSubmitForm');
+            const idInput = document.getElementById('formProductId');
+
+            if (modo === 'crear') {
+                title.textContent = '➕ Registrar Nuevo Producto';
+                btnSubmit.textContent = 'Guardar Producto';
+                idInput.value = '';
+                selectTipo.disabled = false;
+                selectTipo.value = 'celular';
+            } else if (modo === 'editar' && producto) {
+                title.textContent = `✏️ Editar Producto #${producto.idProducto || producto.id}`;
+                btnSubmit.textContent = 'Actualizar Producto';
+                idInput.value = producto.idProducto || producto.id;
+                
+                selectTipo.value = producto._tipo || 'celular';
+                selectTipo.disabled = true;
+
+                document.getElementById('formNombre').value = producto.nombre || '';
+                document.getElementById('formMarca').value = producto.marca || '';
+                document.getElementById('formDescripcion').value = producto.descripcion || '';
+                document.getElementById('formPrecio').value = producto.precio || 0;
+                document.getElementById('formStock').value = producto.stock || 0;
+                document.getElementById('formStockMinimo').value = producto.stockMinimo !== undefined ? producto.stockMinimo : 5;
+                document.getElementById('formImagenUrl').value = producto.imagenUrl || '';
+
+                if (producto._tipo === 'celular') {
+                    document.getElementById('formModelo').value = producto.modelo || '';
+                    document.getElementById('formSistemaOperativo').value = producto.sistemaOperativo || '';
+                    document.getElementById('formAlmacenamientoGB').value = producto.almacenamientoGB || 128;
+                    document.getElementById('formRamGB').value = producto.ramGB || 8;
+                    document.getElementById('formProcesador').value = producto.procesador || '';
+                    document.getElementById('formPantallaPulgadas').value = producto.pantallaPulgadas || 6.5;
+                    document.getElementById('formBateriaMAh').value = producto.bateriaMAh || 5000;
+                    document.getElementById('formColorCelular').value = producto.color || '';
+                    document.getElementById('formEsLibre').checked = producto.esLibre !== false;
+                } else if (producto._tipo === 'accesorio') {
+                    document.getElementById('formTipoAccesorio').value = producto.tipoAccesorio || 'Funda';
+                    document.getElementById('formMaterial').value = producto.material || '';
+                    document.getElementById('formColorAccesorio').value = producto.color || '';
+                    document.getElementById('formMarcasCompatibles').value = Array.isArray(producto.marcasCompatibles) 
+                        ? producto.marcasCompatibles.join(', ') 
+                        : (producto.marcasCompatibles || '');
+                    document.getElementById('formEsOriginal').checked = producto.esOriginal !== false;
+                }
+            }
+
+            actualizarCamposTipoForm();
+            toggleProductFormModal(true);
+        }
+
+        function prepararEditarProducto(id, tipo) {
+            let producto = null;
+            if (tipo === 'celular') {
+                producto = celularesGlobal.find(p => (p.idProducto || p.id) === id);
+            } else {
+                producto = accesoriosGlobal.find(p => (p.idProducto || p.id) === id);
+            }
+
+            if (producto) {
+                abrirModalFormProducto('editar', producto);
+            } else {
+                alert('No se encontró la información del producto.');
+            }
+        }
+
+        async function guardarProductoAdmin(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('sintaxis_token');
+            const errorMsg = document.getElementById('productFormErrorMsg');
+            errorMsg.style.display = 'none';
+
+            if (!token) {
+                alert('Debe iniciar sesión como ADMIN o EMPLEADO para realizar esta operación.');
+                return;
+            }
+
+            const id = document.getElementById('formProductId').value;
+            const esEdicion = !!id;
+            const tipo = document.getElementById('formTipoProducto').value;
+
+            const nombre = document.getElementById('formNombre').value.trim();
+            const marca = document.getElementById('formMarca').value.trim();
+            const descripcion = document.getElementById('formDescripcion').value.trim();
+            const precio = parseFloat(document.getElementById('formPrecio').value);
+            const stock = parseInt(document.getElementById('formStock').value, 10);
+            const stockMinimo = parseInt(document.getElementById('formStockMinimo').value, 10);
+            const imagenUrl = document.getElementById('formImagenUrl').value.trim();
+
+            let dto = { nombre, marca, descripcion, precio, stock, stockMinimo, imagenUrl };
+            let endpoint = '';
+
+            if (tipo === 'celular') {
+                endpoint = esEdicion ? `/api/celulares/${id}` : '/api/celulares';
+                dto.modelo = document.getElementById('formModelo').value.trim();
+                dto.sistemaOperativo = document.getElementById('formSistemaOperativo').value.trim();
+                dto.almacenamientoGB = parseInt(document.getElementById('formAlmacenamientoGB').value, 10);
+                dto.ramGB = parseInt(document.getElementById('formRamGB').value, 10);
+                dto.procesador = document.getElementById('formProcesador').value.trim();
+                dto.pantallaPulgadas = parseFloat(document.getElementById('formPantallaPulgadas').value);
+                dto.bateriaMAh = parseInt(document.getElementById('formBateriaMAh').value, 10);
+                dto.color = document.getElementById('formColorCelular').value.trim();
+                dto.esLibre = document.getElementById('formEsLibre').checked;
+            } else {
+                endpoint = esEdicion ? `/api/accesorios/${id}` : '/api/accesorios';
+                dto.tipoAccesorio = document.getElementById('formTipoAccesorio').value;
+                dto.material = document.getElementById('formMaterial').value.trim();
+                dto.color = document.getElementById('formColorAccesorio').value.trim();
+                dto.esOriginal = document.getElementById('formEsOriginal').checked;
+                
+                const rawMarcas = document.getElementById('formMarcasCompatibles').value.trim();
+                dto.marcasCompatibles = rawMarcas ? rawMarcas.split(',').map(m => m.trim()).filter(m => m.length > 0) : [];
+            }
+
+            try {
+                const method = esEdicion ? 'PUT' : 'POST';
+                const res = await fetch(endpoint, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(dto)
+                });
+
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    throw new Error(errJson.message || `Error al ${esEdicion ? 'actualizar' : 'crear'} el producto. Status: ${res.status}`);
+                }
+
+                alert(`¡Producto ${esEdicion ? 'actualizado' : 'creado'} con éxito!`);
+                toggleProductFormModal(false);
+                await cargarProductos();
+                cargarProductosAdmin();
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = err.message || 'Ocurrió un error al procesar la solicitud.';
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        async function eliminarProductoAdmin(id, tipo, nombre) {
+            const token = localStorage.getItem('sintaxis_token');
+            if (!token) {
+                alert('Debe iniciar sesión para realizar esta operación.');
+                return;
+            }
+
+            if (!confirm(`¿Está seguro de que desea eliminar el producto "${nombre}" (ID: ${id})?\nEsta acción realizará un borrado lógico.`)) {
+                return;
+            }
+
+            const endpoint = tipo === 'celular' ? `/api/celulares/${id}` : `/api/accesorios/${id}`;
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    throw new Error(errJson.message || `No se pudo eliminar el producto. Status: ${res.status}`);
+                }
+
+                alert(`Producto "${nombre}" eliminado con éxito.`);
+                await cargarProductos();
+                cargarProductosAdmin();
+            } catch (err) {
+                console.error(err);
+                alert(err.message || 'Error al eliminar el producto.');
+            }
+        }
+
+        // Inicializar contador y renderizado de carrito al cargar
+        actualizarContadorCarrito();
+        renderizarCarrito();
+
         // Carga inicial
+        actualizarUIAuth();
         cargarProductos();
     </script>
 </body>

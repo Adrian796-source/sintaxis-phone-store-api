@@ -443,7 +443,7 @@ class AccesorioServiceTest {
         dtoConImagen.setMaterial("Cuero");
         dtoConImagen.setEsOriginal(true);
         dtoConImagen.setMarcasCompatibles(Arrays.asList("iPhone 15 Pro Max"));
-        dtoConImagen.setImagenUrl("/api/productos/imagenes/funda-premium.jpg");
+        dtoConImagen.setImagenUrl("/api/imagenes/funda-premium.jpg");
 
         Accesorio accesorioConImagen = new Accesorio();
         accesorioConImagen.setIdProducto(3L);
@@ -461,7 +461,7 @@ class AccesorioServiceTest {
         accesorioConImagen.setMaterial("Cuero");
         accesorioConImagen.setEsOriginal(true);
         accesorioConImagen.setMarcasCompatibles(Arrays.asList("iPhone 15 Pro Max"));
-        accesorioConImagen.setImagenUrl("/api/productos/imagenes/funda-premium.jpg");
+        accesorioConImagen.setImagenUrl("/api/imagenes/funda-premium.jpg");
 
         when(accesorioRepository.save(any(Accesorio.class))).thenReturn(accesorioConImagen);
 
@@ -470,7 +470,7 @@ class AccesorioServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getIdProducto()).isEqualTo(3L);
         assertThat(result.getNombre()).isEqualTo("Funda Premium");
-        assertThat(result.getImagenUrl()).isEqualTo("/api/productos/imagenes/funda-premium.jpg");
+        assertThat(result.getImagenUrl()).isEqualTo("/api/imagenes/funda-premium.jpg");
 
         verify(accesorioRepository).save(any(Accesorio.class));
     }
