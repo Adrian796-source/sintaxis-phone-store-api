@@ -1,11 +1,15 @@
-let celularesGlobal = [];
-let accesoriosGlobal = [];
-let categoriaActiva = 'todos';
-let subcategoriaActiva = 'Todas';
+window.celularesGlobal = window.celularesGlobal || [];
+window.accesoriosGlobal = window.accesoriosGlobal || [];
+window.categoriaActiva = window.categoriaActiva || 'todos';
+window.subcategoriaActiva = window.subcategoriaActiva || 'Todas';
 
 async function cargarProductos() {
-    const tbody = document.getElementById('productTableBody');
-    tbody.innerHTML = `<tr><td colspan="6" class="loading">Conectando con el núcleo API (/api/celulares y /api/accesorios)...</td></tr>`;
+    const gridCelulares = document.getElementById('gridCelulares');
+    const containerAccesoriosSubcats = document.getElementById('containerAccesoriosSubcats');
+    
+    const loadingHtml = `<div class="empty-state" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-secondary);">Conectando con el núcleo API (/api/celulares y /api/accesorios)...</div>`;
+    if (gridCelulares) gridCelulares.innerHTML = loadingHtml;
+    if (containerAccesoriosSubcats) containerAccesoriosSubcats.innerHTML = loadingHtml;
 
     try {
         const [resCelulares, resAccesorios] = await Promise.all([
@@ -33,10 +37,12 @@ async function cargarProductos() {
         actualizarMetricas([...celularesGlobal, ...accesoriosGlobal]);
     } catch (error) {
         console.error(error);
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: var(--danger-rose);">
+        const errorHtml = `<div class="empty-state" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--danger-rose);">
             <strong>Error de conexión con el servidor</strong>
             <p>No se pudo obtener la información de <code>/api/celulares</code> y <code>/api/accesorios</code>. Verifique el estado de Spring Boot.</p>
-        </td></tr>`;
+        </div>`;
+        if (gridCelulares) gridCelulares.innerHTML = errorHtml;
+        if (containerAccesoriosSubcats) containerAccesoriosSubcats.innerHTML = errorHtml;
     }
 }
 
@@ -129,61 +135,108 @@ function filtrarProductos() {
 }
 
 function renderizarProductos(productos) {
-    const tbody = document.getElementById('productTableBody');
+    const sectionCelulares = document.getElementById('sectionCelulares');
+    const sectionAccesorios = document.getElementById('sectionAccesorios');
+    const gridCelulares = document.getElementById('gridCelulares');
+    const containerAccesoriosSubcats = document.getElementById('containerAccesoriosSubcats');
     
-    if (productos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">
-            <strong>No se encontraron productos que coincidan con tu búsqueda. Intenta con otra palabra.</strong>
-            <p>Verifique los términos ingresados o pruebe cambiando de categoría.</p>
-        </td></tr>`;
-        return;
+    const countCelularesEl = document.getElementById('countCelulares');
+    const countAccesoriosEl = document.getElementById('countAccesorios');
+
+    // Separar celulares y accesorios
+    const celularesList = productos.filter(p => p._tipo === 'celular');
+    const accesoriosList = productos.filter(p => p._tipo === 'accesorio');
+
+    countCelularesEl.textContent = celularesList.length;
+    countAccesoriosEl.textContent = accesoriosList.length;
+
+    // Controlar visibilidad según pestaña activa (todos, celulares, accesorios)
+    if (categoriaActiva === 'celulares') {
+        sectionCelulares.style.display = 'block';
+        sectionAccesorios.style.display = 'none';
+    } else if (categoriaActiva === 'accesorios') {
+        sectionCelulares.style.display = 'none';
+        sectionAccesorios.style.display = 'block';
+    } else {
+        sectionCelulares.style.display = 'block';
+        sectionAccesorios.style.display = 'block';
     }
 
-    tbody.innerHTML = productos.map(p => {
-        const esStockBajo = p.stock <= p.stockMinimo;
-        const imagenDefault = p.imagenUrl && p.imagenUrl.trim() !== '' 
-            ? (p.imagenUrl.startsWith('http://localhost:8080/api/productos/') 
-                ? p.imagenUrl.replace('/api/productos/', '/api/imagenes/') 
-                : p.imagenUrl)
-            : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60';
+    // Renderizar Celulares Grid
+    if (celularesList.length === 0) {
+        gridCelulares.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-secondary);">No hay celulares disponibles que coincidan con la búsqueda.</div>`;
+    } else {
+        gridCelulares.innerHTML = celularesList.map(p => crearTarjetaProducto(p)).join('');
+    }
 
-        const tipoBadge = p._tipo === 'celular' ? 'Celular' : 'Accesorio';
+    // Renderizar Accesorios agrupados por subcategoría
+    if (accesoriosList.length === 0) {
+        containerAccesoriosSubcats.innerHTML = `<div class="empty-state" style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay accesorios disponibles que coincidan con la búsqueda.</div>`;
+    } else {
+        // Agrupar accesorios por subcategoría
+        const grupos = {};
+        accesoriosList.forEach(acc => {
+            const sub = acc.subcategoriaNombre || acc.subcategoria || 'General';
+            if (!grupos[sub]) grupos[sub] = [];
+            grupos[sub].push(acc);
+        });
 
-        return `
-            <tr>
-                <td>
-                    <div class="product-cell">
-                        <img src="${imagenDefault}" alt="${p.nombre}" class="product-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60';">
-                        <div>
-                            <div class="product-title">${escapeHtml(p.nombre)}</div>
-                            <div class="product-desc" title="${escapeHtml(p.descripcion || '')}">${escapeHtml(p.descripcion || 'Sin descripción')}</div>
-                        </div>
+        let htmlGrupos = '';
+        for (const [subcatNombre, items] of Object.entries(grupos)) {
+            htmlGrupos += `
+                <div class="subcat-group-wrapper" style="margin-bottom: 1.5rem;">
+                    <div class="subcat-group-title">
+                        📁 ${escapeHtml(subcatNombre)} <span>${items.length}</span>
                     </div>
-                </td>
-                <td>
-                    <span class="badge badge-normal">${tipoBadge}</span>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">${escapeHtml(p.marca || 'Genérica')}</div>
-                </td>
-                <td>
-                    <span class="mono" style="font-weight: 600; color: var(--accent-cyan);">$${Number(p.precio || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span>
-                </td>
-                <td>
-                    <span class="mono ${esStockBajo ? 'badge badge-warning' : ''}" style="${esStockBajo ? '' : 'font-weight: 500;'}">
-                        ${p.stock} un.
-                    </span>
-                    <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 0.1rem;">Mín: ${p.stockMinimo}</div>
-                </td>
-                <td>
-                    ${p.activo ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>'}
-                </td>
-                <td>
-                    <button class="btn-add-cart" onclick='agregarAlCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
-                        + Agregar al carrito
+                    <div class="product-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                        ${items.map(p => crearTarjetaProducto(p)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        containerAccesoriosSubcats.innerHTML = htmlGrupos;
+    }
+}
+
+function crearTarjetaProducto(p) {
+    const esStockBajo = p.stock <= p.stockMinimo;
+    const imagenDefault = p.imagenUrl && p.imagenUrl.trim() !== '' 
+        ? (p.imagenUrl.startsWith('http://localhost:8080/api/productos/') 
+            ? p.imagenUrl.replace('/api/productos/', '/api/imagenes/') 
+            : p.imagenUrl)
+        : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';
+
+    let badgeHtml = '';
+    if (p._tipo === 'celular') {
+        badgeHtml = `<span class="badge badge-active" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border-color: rgba(56,189,248,0.3);">Celular</span>`;
+    } else {
+        const sub = p.subcategoriaNombre || p.subcategoria || 'Accesorio';
+        badgeHtml = `<span class="badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border-color: rgba(236,72,153,0.3);">${escapeHtml(sub)}</span>`;
+    }
+
+    if (esStockBajo) {
+        badgeHtml += ` <span class="badge badge-warning" style="margin-left: 0.25rem;">Stock Bajo</span>`;
+    }
+
+    return `
+        <div class="product-card">
+            <div class="product-card-img-container">
+                <div class="product-card-badge">${badgeHtml}</div>
+                <img src="${imagenDefault}" alt="${escapeHtml(p.nombre)}" class="product-card-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';">
+            </div>
+            <div class="product-card-body">
+                <div class="product-card-brand">${escapeHtml(p.marca || 'Genérica')}</div>
+                <div class="product-card-title">${escapeHtml(p.nombre)}</div>
+                <div class="product-card-desc" title="${escapeHtml(p.descripcion || '')}">${escapeHtml(p.descripcion || 'Sin descripción disponible.')}</div>
+                <div class="product-card-footer">
+                    <div class="product-card-price">$${Number(p.precio || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+                    <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.75rem;" onclick='agregarAlCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+                        🛒 Agregar
                     </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function actualizarMetricas(productos) {
@@ -1180,7 +1233,6 @@ function prepararEditarProducto(id, tipo) {
 async function guardarProductoAdmin(event) {
     event.preventDefault();
     const token = localStorage.getItem('sintaxis_token');
-    console.log('Token enviado:', token);
     const errorMsg = document.getElementById('productFormErrorMsg');
     errorMsg.style.display = 'none';
 

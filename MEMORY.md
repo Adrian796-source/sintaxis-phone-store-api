@@ -19,7 +19,8 @@
 - [x] **Gestión Dinámica de Subcategorías y Relación por ID:** Selector de subcategoría en el formulario de accesorios configurado con el ID (`value="${idSub}"`) y envío correcto de `subcategoriaId` en los payloads de guardado/actualización de accesorios, resolviendo definitivamente el problema del 'N/A' en la tabla.
 
 ## Tareas Completadas Recientes
-- [x] Corrección en servicios (`CelularService` y `AccesorioService`) asegurando que la actualización y guardado de `imagenUrl` no se pierda ni trunque.
-- [x] Corrección en el Frontend (`app.js`) en `renderizarProductos` y `renderizarTablaAdmin`, garantizando el uso correcto de `src="${imagenDefault}"` y manejo de eventos `onerror` con imagen por defecto de Unsplash para evitar mostrar el texto `alt` y preservar el diseño.
-- [x] Ejecución exitosa de `mvn clean test`: **371 tests pasando al 100% en verde** (`BUILD SUCCESS`).
-- [x] Actualización formal del archivo `MEMORY.md`.
+- [x] Limpieza de `index.html`: Eliminación completa del bloque `<script>` duplicado y viejo (que empezaba en la línea 565).
+- [x] Referencia única: Asegurado que al final de `index.html` (antes de `</body>`) solo quede `<script src="app.js" defer></script>`.
+- [x] Verificación de `app.js`: Confirmado que `celularesGlobal` y `accesoriosGlobal` están declarados correctamente una única vez al principio con `let`.
+- [x] Verificación y pruebas: Todos los contadores de "Celulares" y "Accesorios" y las tarjetas de productos se actualizan y renderizan correctamente.
+- [x] Ejecución exitosa de los 371 tests de la API (BUILD SUCCESS).
