@@ -43,6 +43,12 @@ public class AccesorioResponseDTO {
     @Schema(description = "Indica si el producto está activo", example = "true")
     private boolean activo;
 
+    @Schema(description = "ID de la subcategoría", example = "1")
+    private Long subcategoriaId;
+
+    @Schema(description = "Nombre de la subcategoría", example = "Fundas")
+    private String subcategoriaNombre;
+
     @Schema(description = "Tipo de accesorio",
             example = "Funda",
             allowableValues = {"Funda", "Protector de Pantalla", "Cargador", "Auriculares", "Cable", "Soporte", "Otro"})

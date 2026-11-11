@@ -5,6 +5,8 @@ import com.adrian.sintaxis.dto.AccesorioResponseDTO;
 import com.adrian.sintaxis.exception.*;
 import com.adrian.sintaxis.model.Accesorio;
 import com.adrian.sintaxis.repository.AccesorioRepository;
+import com.adrian.sintaxis.repository.SubcategoriaRepository;
+import com.adrian.sintaxis.model.Subcategoria;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,6 +33,7 @@ public class AccesorioService implements IAccesorioService {
     // Constante para el mensaje de error de recurso no encontrado
     private static final String ACCESORIO_NO_ENCONTRADO = "Accesorio no encontrado con id: ";
     private final AccesorioRepository accesorioRepository;
+    private final SubcategoriaRepository subcategoriaRepository;
 
     private AccesorioResponseDTO toDTO(Accesorio accesorio) {
         AccesorioResponseDTO dto = new AccesorioResponseDTO();
@@ -44,6 +47,10 @@ public class AccesorioService implements IAccesorioService {
         dto.setCategoria(accesorio.getCategoria());
         dto.setFechaAlta(accesorio.getFechaAlta());
         dto.setActivo(accesorio.isActivo());
+        if (accesorio.getSubcategoria() != null) {
+            dto.setSubcategoriaId(accesorio.getSubcategoria().getIdSubcategoria());
+            dto.setSubcategoriaNombre(accesorio.getSubcategoria().getNombre());
+        }
         dto.setTipoAccesorio(accesorio.getTipoAccesorio());
         dto.setColor(accesorio.getColor());
         dto.setMaterial(accesorio.getMaterial());
@@ -62,6 +69,11 @@ public class AccesorioService implements IAccesorioService {
         accesorio.setStockMinimo(dto.getStockMinimo());
         accesorio.setMarca(dto.getMarca());
         accesorio.setCategoria("Accesorio");
+        if (dto.getSubcategoriaId() != null) {
+            Subcategoria sub = subcategoriaRepository.findById(dto.getSubcategoriaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Subcategoría no encontrada con id: " + dto.getSubcategoriaId()));
+            accesorio.setSubcategoria(sub);
+        }
         accesorio.setTipoAccesorio(dto.getTipoAccesorio());
         accesorio.setColor(dto.getColor());
         accesorio.setMaterial(dto.getMaterial());
@@ -80,9 +92,7 @@ public class AccesorioService implements IAccesorioService {
         if (dto.getPrecio() == null || dto.getPrecio() <= 0) {
             throw new PrecioInvalidoException("El precio debe ser mayor a 0");
         }
-        if (dto.getTipoAccesorio() == null || dto.getTipoAccesorio().isBlank()) {
-            throw new TipoAccesorioObligatorioException("El tipo de accesorio es obligatorio");
-        }
+
 
         Accesorio accesorio = toEntity(dto);
         accesorio.setFechaAlta(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
@@ -159,11 +169,21 @@ public class AccesorioService implements IAccesorioService {
         existente.setPrecio(dto.getPrecio());
         existente.setStock(dto.getStock());
         existente.setStockMinimo(dto.getStockMinimo());
+        if (dto.getSubcategoriaId() != null) {
+            Subcategoria sub = subcategoriaRepository.findById(dto.getSubcategoriaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Subcategoría no encontrada con id: " + dto.getSubcategoriaId()));
+            existente.setSubcategoria(sub);
+        } else {
+            existente.setSubcategoria(null);
+        }
         existente.setTipoAccesorio(dto.getTipoAccesorio());
         existente.setColor(dto.getColor());
         existente.setMaterial(dto.getMaterial());
         existente.setEsOriginal(dto.isEsOriginal());
         existente.setMarcasCompatibles(dto.getMarcasCompatibles());
+        if (dto.getImagenUrl() != null && !dto.getImagenUrl().isEmpty()) {
+            existente.setImagenUrl(dto.getImagenUrl());
+        }
         return toDTO(accesorioRepository.save(existente));
     }
 

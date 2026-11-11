@@ -222,15 +222,34 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_ShouldThrowException_WhenEmailExists() {
-        when(usuarioRepository.existsByEmail("juan@test.com")).thenReturn(true);
+    void register_ShouldNotCreateClient_WhenRolIsAdminOrEmpleado() {
+        registerRequestDTO.setRol("ADMIN");
+        registerRequestDTO.setEmail("admin@sintaxis.com");
 
-        assertThatThrownBy(() -> authService.register(registerRequestDTO))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Ya existe un usuario con ese email");
+        when(usuarioRepository.existsByEmail("admin@sintaxis.com")).thenReturn(false);
+        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 
-        verify(usuarioRepository, never()).save(any(Usuario.class));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario usuarioGuardado = invocation.getArgument(0);
+            usuarioGuardado.setIdUsuario(2L);
+            return usuarioGuardado;
+        });
+
+        when(userDetailsService.loadUserByUsername("admin@sintaxis.com")).thenReturn(userDetails);
+        when(jwtService.generarToken(userDetails)).thenReturn("jwt-token-admin");
+
+        AuthResponseDTO result = authService.register(registerRequestDTO);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getToken()).isEqualTo("jwt-token-admin");
+        assertThat(result.getEmail()).isEqualTo("admin@sintaxis.com");
+        assertThat(result.getRol()).isEqualTo("ADMIN");
+        assertThat(result.getIdCliente()).isNull();
+
+        verify(usuarioRepository).existsByEmail("admin@sintaxis.com");
         verify(clienteRepository, never()).save(any(Cliente.class));
+        verify(usuarioRepository).save(any(Usuario.class));
+        verify(jwtService).generarToken(any(UserDetails.class));
     }
 
     @Test

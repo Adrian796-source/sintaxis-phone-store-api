@@ -105,7 +105,7 @@ public class SecurityConfig {
                         // Endpoints públicos de Swagger/OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", 
                                 "/v3/api-docs.yaml", "/webjars/**", "/swagger-resources", "/swagger-resources/**").permitAll()
-                        
+                        .requestMatchers(HttpMethod.GET, "/api/subcategorias/**").permitAll()
                         // Endpoints públicos de Auth e Imágenes
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/imagenes/**").permitAll()
                         .requestMatchers("/api/auth/perfil").authenticated()
@@ -115,13 +115,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, CELULARES_PATH).permitAll()
                         .requestMatchers(HttpMethod.GET, ACCESORIOS_PATH).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, CELULARES_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
-                        .requestMatchers(HttpMethod.PUT, CELULARES_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
-                        .requestMatchers(HttpMethod.DELETE, CELULARES_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.POST, CELULARES_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.PUT, CELULARES_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.DELETE, CELULARES_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
 
-                        .requestMatchers(HttpMethod.POST, ACCESORIOS_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
-                        .requestMatchers(HttpMethod.PUT, ACCESORIOS_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
-                        .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.POST, ACCESORIOS_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.PUT, ACCESORIOS_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
 
                         // Clientes - solo ADMIN
                         .requestMatchers("/api/clientes/**").hasRole(ROLE_ADMIN)

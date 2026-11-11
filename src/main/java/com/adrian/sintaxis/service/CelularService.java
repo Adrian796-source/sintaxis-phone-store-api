@@ -182,6 +182,9 @@ public class CelularService implements ICelularService {
         existente.setBateriaMAh(dto.getBateriaMAh());
         existente.setSistemaOperativo(dto.getSistemaOperativo());
         existente.setEsLibre(dto.isEsLibre());
+        if (dto.getImagenUrl() != null && !dto.getImagenUrl().isEmpty()) {
+            existente.setImagenUrl(dto.getImagenUrl());
+        }
         return toDTO(celularRepository.save(existente));
     }
 

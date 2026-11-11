@@ -18,6 +18,7 @@ public abstract class Producto {
     @GeneratedValue( strategy = GenerationType.IDENTITY)
     protected Long idProducto;
     protected String nombre;
+    @Column(columnDefinition = "TEXT")
     protected String descripcion;
     protected Double precio;
     protected int stock;
@@ -27,6 +28,7 @@ public abstract class Producto {
     protected boolean activo;
     protected int stockMinimo;
     // ####### Esto es lo que he agregado para
+    @Column(columnDefinition = "TEXT")
     private String imagenUrl;
 
     // Método abstracto

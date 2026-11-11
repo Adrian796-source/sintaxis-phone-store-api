@@ -75,31 +75,33 @@ public class AuthService {
         usuario.setRol(rol);
         usuario.setActivo(true);
 
-        //  Si NO viene idCliente, CREAR CLIENTE AUTOMÁTICAMENTE
-        if (dto.getIdCliente() != null) {
-            Cliente cliente = clienteRepository.findById(dto.getIdCliente())
-                    .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con id: " + dto.getIdCliente()));
-            usuario.setCliente(cliente);
+        //  Si NO viene idCliente, CREAR CLIENTE AUTOMÁTICAMENTE SÓLO SI EL ROL ES CLIENTE
+        if (rol == Rol.CLIENTE) {
+            if (dto.getIdCliente() != null) {
+                Cliente cliente = clienteRepository.findById(dto.getIdCliente())
+                        .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con id: " + dto.getIdCliente()));
+                usuario.setCliente(cliente);
 
-            // Validar que el cliente no tenga ya un usuario asociado
-            if (cliente.getUsuario() != null) {
-                throw new ClienteYaAsociadoException("El cliente ya está asociado a un usuario");
+                // Validar que el cliente no tenga ya un usuario asociado
+                if (cliente.getUsuario() != null) {
+                    throw new ClienteYaAsociadoException("El cliente ya está asociado a un usuario");
+                }
+            } else {
+                // Crear cliente automático con los datos del usuario
+                Cliente nuevoCliente = new Cliente();
+                nuevoCliente.setNombre(dto.getNombre());
+                nuevoCliente.setApellido(dto.getApellido() != null ? dto.getApellido() : "");
+                nuevoCliente.setEmail(dto.getEmail());
+                nuevoCliente.setTelefono(dto.getTelefono() != null ? dto.getTelefono() : "");
+                nuevoCliente.setDireccion(dto.getDireccion() != null ? dto.getDireccion() : "");
+                nuevoCliente.setFechaRegistro(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
+                nuevoCliente.setEsVip(false);
+                nuevoCliente.setPuntosAcumulados(0);
+                nuevoCliente.setActivo(true);
+
+                clienteRepository.save(nuevoCliente);
+                usuario.setCliente(nuevoCliente);
             }
-        } else {
-            // Crear cliente automático con los datos del usuario
-            Cliente nuevoCliente = new Cliente();
-            nuevoCliente.setNombre(dto.getNombre());
-            nuevoCliente.setApellido(dto.getApellido() != null ? dto.getApellido() : "");
-            nuevoCliente.setEmail(dto.getEmail());
-            nuevoCliente.setTelefono(dto.getTelefono() != null ? dto.getTelefono() : "");
-            nuevoCliente.setDireccion(dto.getDireccion() != null ? dto.getDireccion() : "");
-            nuevoCliente.setFechaRegistro(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")));
-            nuevoCliente.setEsVip(false);
-            nuevoCliente.setPuntosAcumulados(0);
-            nuevoCliente.setActivo(true);
-
-            clienteRepository.save(nuevoCliente);
-            usuario.setCliente(nuevoCliente);
         }
 
         usuarioRepository.save(usuario);

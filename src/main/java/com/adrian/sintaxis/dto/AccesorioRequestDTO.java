@@ -44,17 +44,18 @@ public class AccesorioRequestDTO {
             defaultValue = "5")
     private int stockMinimo;
 
+    @Schema(description = "ID de la subcategoría del accesorio", example = "1")
+    private Long subcategoriaId;
+
     @NotBlank(message = "La marca es obligatoria")
     @Schema(description = "Marca del accesorio",
             example = "Samsung",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private String marca;
 
-    @NotBlank(message = "El tipo de accesorio es obligatorio")
     @Schema(description = "Tipo de accesorio",
             example = "Funda",
-            allowableValues = {"Funda", "Protector de Pantalla", "Cargador", "Auriculares", "Cable", "Soporte", "Otro"},
-            requiredMode = Schema.RequiredMode.REQUIRED)
+            allowableValues = {"Funda", "Protector de Pantalla", "Cargador", "Auriculares", "Cable", "Soporte", "Otro"})
     private String tipoAccesorio;
 
     @Schema(description = "Color del accesorio",

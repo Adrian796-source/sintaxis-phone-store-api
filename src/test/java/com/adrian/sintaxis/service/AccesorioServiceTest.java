@@ -138,27 +138,7 @@ class AccesorioServiceTest {
         verify(accesorioRepository, never()).save(any(Accesorio.class));
     }
 
-    @Test
-    void guardar_ShouldThrowException_WhenTipoAccesorioIsBlank() {
-        accesorioRequestDTO.setTipoAccesorio("");
 
-        assertThatThrownBy(() -> accesorioService.guardar(accesorioRequestDTO))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("El tipo de accesorio es obligatorio");
-
-        verify(accesorioRepository, never()).save(any(Accesorio.class));
-    }
-
-    @Test
-    void guardar_ShouldThrowException_WhenTipoAccesorioIsNull() {
-        accesorioRequestDTO.setTipoAccesorio(null);
-
-        assertThatThrownBy(() -> accesorioService.guardar(accesorioRequestDTO))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("El tipo de accesorio es obligatorio");
-
-        verify(accesorioRepository, never()).save(any(Accesorio.class));
-    }
 
     // ==================== TESTS BUSCAR POR ID ====================
 
