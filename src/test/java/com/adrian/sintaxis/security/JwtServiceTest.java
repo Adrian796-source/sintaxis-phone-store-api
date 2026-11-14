@@ -46,6 +46,20 @@ class JwtServiceTest {
     }
 
     @Test
+    void generarToken_ShouldIncludeRolClaim() {
+        String token = jwtService.generarToken(userDetails);
+
+        Claims claims = Jwts.parser()
+                .verifyWith(getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        String rol = claims.get("rol", String.class);
+        assertThat(rol).isEqualTo("ROLE_USER");
+    }
+
+    @Test
     void extraerEmail_ShouldReturnEmailFromToken() {
         String token = jwtService.generarToken(userDetails);
         String email = jwtService.extraerEmail(token);

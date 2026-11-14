@@ -44,13 +44,11 @@ public class VentaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Listar todas las ventas", description = "Devuelve todas las ventas paginadas, ordenadas por fecha.")
+    @Operation(summary = "Listar todas las ventas", description = "Devuelve todas las ventas ordenadas por fecha.")
     @GetMapping
-    public ResponseEntity<Page<VentaResponseDTO>> listarTodos(
-            @PageableDefault(size = 10, sort = "fecha") Pageable pageable) {
-        return ResponseEntity.ok(ventaService.listarTodos(pageable));
+    public ResponseEntity<List<VentaResponseDTO>> listarTodos() {
+        return ResponseEntity.ok(ventaService.listarTodos());
     }
-
     @Operation(summary = "Actualizar venta", description = "Modifica el método de pago y descuento de una venta. No se puede modificar una venta cancelada.")
     @PutMapping("/{id}")
     public ResponseEntity<VentaResponseDTO> actualizar(@PathVariable Long id, @Valid @RequestBody VentaRequestDTO dto) {

@@ -15,7 +15,7 @@ public interface IVentaService {
 
     VentaResponseDTO guardar(VentaRequestDTO dto);
     Optional<VentaResponseDTO> buscarPorId(Long id);
-    Page<VentaResponseDTO> listarTodos(Pageable pageable);
+    List<VentaResponseDTO> listarTodos();
     VentaResponseDTO actualizar(Long id, VentaRequestDTO dto);
     void eliminar(Long id);
 

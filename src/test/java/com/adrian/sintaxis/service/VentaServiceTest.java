@@ -244,26 +244,24 @@ class VentaServiceTest {
     // ==================== TESTS LISTAR TODOS ====================
 
     @Test
-    void listarTodos_ShouldReturnPageOfVentas() {
-        Page<Venta> page = new PageImpl<>(Arrays.asList(venta));
-        when(ventaRepository.findAll(any(Pageable.class))).thenReturn(page);
+    void listarTodos_ShouldReturnListOfVentas() {
+        when(ventaRepository.findAllWithDetalles()).thenReturn(Arrays.asList(venta));
 
-        Page<VentaResponseDTO> result = ventaService.listarTodos(Pageable.unpaged());
+        List<VentaResponseDTO> result = ventaService.listarTodos();
 
         assertThat(result).isNotNull();
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getIdVenta()).isEqualTo(1L);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getIdVenta()).isEqualTo(1L);
     }
 
     @Test
-    void listarTodos_ShouldReturnEmptyPage_WhenNoVentas() {
-        Page<Venta> emptyPage = new PageImpl<>(new ArrayList<>());
-        when(ventaRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+    void listarTodos_ShouldReturnEmptyList_WhenNoVentas() {
+        when(ventaRepository.findAllWithDetalles()).thenReturn(new ArrayList<>());
 
-        Page<VentaResponseDTO> result = ventaService.listarTodos(Pageable.unpaged());
+        List<VentaResponseDTO> result = ventaService.listarTodos();
 
         assertThat(result).isNotNull();
-        assertThat(result.getContent()).isEmpty();
+        assertThat(result).isEmpty();
     }
 
     // ==================== TESTS ACTUALIZAR ====================
@@ -526,6 +524,42 @@ class VentaServiceTest {
                 .containsEntry("Pagada", 5L)
                 .containsEntry("Pendiente", 3L)
                 .containsEntry("Entregada", 2L);
+    }
+
+    @Test
+    void toDTO_ShouldHandleNullClienteAndDetallesAndProducto() {
+        Venta ventaNula = new Venta();
+        ventaNula.setIdVenta(10L);
+        ventaNula.setCliente(null);
+        ventaNula.setDetalles(null);
+
+        when(ventaRepository.findById(10L)).thenReturn(Optional.of(ventaNula));
+
+        Optional<VentaResponseDTO> result = ventaService.buscarPorId(10L);
+        assertThat(result).isPresent();
+        assertThat(result.get().getIdCliente()).isNull();
+        assertThat(result.get().getNombreCliente()).isNull();
+        assertThat(result.get().getDetalles()).isEmpty();
+
+        // Test con detalle con producto nulo
+        DetalleVenta detalleNulo = new DetalleVenta();
+        detalleNulo.setIdDetalleVenta(5L);
+        detalleNulo.setProducto(null);
+        detalleNulo.setCantidad(1);
+        detalleNulo.setPrecioUnitario(100.0);
+
+        Venta ventaDetalleNulo = new Venta();
+        ventaDetalleNulo.setIdVenta(11L);
+        ventaDetalleNulo.setCliente(cliente);
+        ventaDetalleNulo.setDetalles(Arrays.asList(detalleNulo, null));
+
+        when(ventaRepository.findById(11L)).thenReturn(Optional.of(ventaDetalleNulo));
+
+        Optional<VentaResponseDTO> result2 = ventaService.buscarPorId(11L);
+        assertThat(result2).isPresent();
+        assertThat(result2.get().getDetalles()).hasSize(1);
+        assertThat(result2.get().getDetalles().get(0).getIdProducto()).isNull();
+        assertThat(result2.get().getDetalles().get(0).getNombreProducto()).isNull();
     }
 
     // ==================== TESTS TOP CLIENTES ====================

@@ -124,12 +124,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
 
                         // Clientes - solo ADMIN
-                        .requestMatchers("/api/clientes/**").hasRole(ROLE_ADMIN)
+                        .requestMatchers("/api/clientes/**").hasRole("ADMIN")
 
                         // Ventas - ADMIN y EMPLEADO, mis-ventas para CLIENTE
-                        .requestMatchers("/api/ventas/mis-ventas").hasRole(ROLE_CLIENTE)
-                        .requestMatchers("/api/ventas/reportes/**").hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
-                        .requestMatchers("/api/ventas/**").hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers("/api/ventas/reportes/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
+                        .requestMatchers("/api/ventas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
 
                         // Cualquier otro endpoint requiere autenticación
                         .anyRequest().authenticated()

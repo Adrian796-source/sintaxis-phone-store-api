@@ -15,9 +15,8 @@ import com.adrian.sintaxis.repository.ProductoRepository;
 import com.adrian.sintaxis.repository.UsuarioRepository;
 import com.adrian.sintaxis.repository.VentaRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.adrian.sintaxis.exception.*;
 import java.time.ZoneId;
@@ -29,6 +28,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class VentaService implements IVentaService {
 
     // 🔥 Constante para el estado "Pagada", "cancelada" y "venta no encontrada por id"
@@ -47,32 +47,48 @@ public class VentaService implements IVentaService {
     private final ClienteService clienteService;
 
     private DetalleVentaResponseDTO toDetalleDTO(DetalleVenta detalle) {
+        if (detalle == null) {
+            return null;
+        }
         DetalleVentaResponseDTO dto = new DetalleVentaResponseDTO();
         dto.setIdDetalleVenta(detalle.getIdDetalleVenta());
-        dto.setIdProducto(detalle.getProducto().getIdProducto());
-        dto.setNombreProducto(detalle.getProducto().getNombre());
+        if (detalle.getProducto() != null) {
+            dto.setIdProducto(detalle.getProducto().getIdProducto());
+            dto.setNombreProducto(detalle.getProducto().getNombre());
+        }
         dto.setCantidad(detalle.getCantidad());
-        dto.setPrecioUnitario(detalle.getPrecioUnitario());
-        dto.setSubtotalDetalle(detalle.getPrecioUnitario() * detalle.getCantidad());
+        dto.setPrecioUnitario(detalle.getPrecioUnitario() != null ? detalle.getPrecioUnitario() : 0.0);
+        double cantidad = detalle.getCantidad();
+        double precioUnitario = detalle.getPrecioUnitario() != null ? detalle.getPrecioUnitario() : 0.0;
+        dto.setSubtotalDetalle(precioUnitario * cantidad);
         return dto;
     }
 
     private VentaResponseDTO toDTO(Venta venta) {
+        if (venta == null) {
+            return null;
+        }
         VentaResponseDTO dto = new VentaResponseDTO();
         dto.setIdVenta(venta.getIdVenta());
         dto.setFecha(venta.getFecha());
-        dto.setEstado(venta.getEstado());
-        dto.setMetodoPago(venta.getMetodoPago());
-        dto.setSubtotal(venta.getSubtotal());
-        dto.setDescuento(venta.getDescuento());
-        dto.setTotal(venta.getTotal());
+        dto.setEstado(venta.getEstado() != null ? venta.getEstado() : "Pendiente");
+        dto.setMetodoPago(venta.getMetodoPago() != null ? venta.getMetodoPago() : "EFECTIVO");
+        dto.setSubtotal(venta.getSubtotal() != null ? venta.getSubtotal() : 0.0);
+        dto.setDescuento(venta.getDescuento() != null ? venta.getDescuento() : 0.0);
+        dto.setTotal(venta.getTotal() != null ? venta.getTotal() : 0.0);
         if (venta.getCliente() != null) {
             dto.setIdCliente(venta.getCliente().getIdCliente());
-            dto.setNombreCliente(venta.getCliente().getNombre());
-            dto.setApellidoCliente(venta.getCliente().getApellido());
+            dto.setNombreCliente(venta.getCliente().getNombre() != null ? venta.getCliente().getNombre() : "");
+            dto.setApellidoCliente(venta.getCliente().getApellido() != null ? venta.getCliente().getApellido() : "");
         }
         if (venta.getDetalles() != null) {
-            dto.setDetalles(venta.getDetalles().stream().map(this::toDetalleDTO).toList());
+            dto.setDetalles(venta.getDetalles().stream()
+                    .filter(d -> d != null)
+                    .map(this::toDetalleDTO)
+                    .filter(d -> d != null)
+                    .toList());
+        } else {
+            dto.setDetalles(List.of());
         }
         return dto;
     }
@@ -145,6 +161,7 @@ public class VentaService implements IVentaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<VentaResponseDTO> buscarPorId(Long id) {
         return Optional.of(ventaRepository.findById(id)
                 .map(this::toDTO)
@@ -152,8 +169,11 @@ public class VentaService implements IVentaService {
     }
 
     @Override
-    public Page<VentaResponseDTO> listarTodos(Pageable pageable) {
-        return ventaRepository.findAll(pageable).map(this::toDTO);
+    @Transactional(readOnly = true)
+    public List<VentaResponseDTO> listarTodos() {
+        return ventaRepository.findAllWithDetalles().stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
@@ -183,6 +203,7 @@ public class VentaService implements IVentaService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<VentaResponseDTO> misVentas(String email) {
         return usuarioRepository.findByEmail(email)
                 .map(usuario -> {
@@ -196,12 +217,14 @@ public class VentaService implements IVentaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Double totalRecaudado(LocalDateTime desde, LocalDateTime hasta) {
         if (desde.isAfter(hasta)) throw new FechasInvalidasException("La fecha 'desde' no puede ser posterior a 'hasta'");
         return ventaRepository.totalRecaudadoEntreFechas(desde, hasta);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Long> ventasPorEstado() {
         Map<String, Long> resultado = new LinkedHashMap<>();
         ventaRepository.contarPorEstado().forEach(row -> resultado.put((String) row[0], (Long) row[1]));
@@ -209,6 +232,7 @@ public class VentaService implements IVentaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReporteVentaDTO> topClientes() {
         return ventaRepository.topClientes().stream()
                 .map(row -> new ReporteVentaDTO(
@@ -218,11 +242,13 @@ public class VentaService implements IVentaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VentaResponseDTO> buscarPorCliente(Long idCliente) {
         return ventaRepository.findByClienteIdCliente(idCliente).stream().map(this::toDTO).toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VentaResponseDTO> buscarPorEstado(String estado) {
         if (!ESTADOS_VALIDOS.contains(estado)) {
             throw new EstadoInvalidoException("Estado inválido. Los estados válidos son: " + ESTADOS_VALIDOS);
@@ -231,6 +257,7 @@ public class VentaService implements IVentaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VentaResponseDTO> buscarPorRangoFechas(LocalDateTime desde, LocalDateTime hasta) {
         if (desde.isAfter(hasta)) {
             throw new FechasInvalidasException("La fecha 'desde' no puede ser posterior a 'hasta'");

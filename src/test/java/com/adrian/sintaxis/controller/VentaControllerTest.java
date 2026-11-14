@@ -216,34 +216,27 @@ class VentaControllerTest {
     // ==================== TESTS GET ALL ====================
 
     @Test
-    void listarTodos_ShouldReturnPageOfVentas() throws Exception {
+    void listarTodos_ShouldReturnListOfVentas() throws Exception {
         List<VentaResponseDTO> ventas = Arrays.asList(ventaResponseDTO, ventaResponseDTO2);
-        Page<VentaResponseDTO> page = new PageImpl<>(ventas);
 
-        when(ventaService.listarTodos(any(Pageable.class))).thenReturn(page);
+        when(ventaService.listarTodos()).thenReturn(ventas);
 
-        mockMvc.perform(get("/api/ventas")
-                        .param("page", "0")
-                        .param("size", "10"))
+        mockMvc.perform(get("/api/ventas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content.length()").value(2))
-                .andExpect(jsonPath("$.content[0].idVenta").value(1L))
-                .andExpect(jsonPath("$.content[1].idVenta").value(2L));
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].idVenta").value(1L))
+                .andExpect(jsonPath("$[1].idVenta").value(2L));
     }
 
     @Test
-    void listarTodos_ShouldReturnEmptyPage_WhenNoVentas() throws Exception {
-        Page<VentaResponseDTO> emptyPage = new PageImpl<>(Arrays.asList());
+    void listarTodos_ShouldReturnEmptyList_WhenNoVentas() throws Exception {
+        when(ventaService.listarTodos()).thenReturn(Arrays.asList());
 
-        when(ventaService.listarTodos(any(Pageable.class))).thenReturn(emptyPage);
-
-        mockMvc.perform(get("/api/ventas")
-                        .param("page", "0")
-                        .param("size", "10"))
+        mockMvc.perform(get("/api/ventas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content.length()").value(0));
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     // ==================== TESTS UPDATE ====================
