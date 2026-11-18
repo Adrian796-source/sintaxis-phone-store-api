@@ -102,8 +102,25 @@ public class VentaService implements IVentaService {
             throw new VentaSinDetallesException("La venta debe tener al menos un producto");
         }
 
-        Cliente cliente = clienteRepository.findById(dto.getIdCliente())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + dto.getIdCliente()));
+        Cliente cliente;
+        if (dto.getIdCliente() != null) {
+            cliente = clienteRepository.findById(dto.getIdCliente())
+                    .orElseGet(() -> {
+                        Cliente nuevo = new Cliente();
+                        nuevo.setNombre("Cliente");
+                        nuevo.setApellido("Invitado");
+                        nuevo.setEmail("invitado_" + System.currentTimeMillis() + "@sintaxis.com");
+                        nuevo.setTelefono("000000000");
+                        return clienteRepository.save(nuevo);
+                    });
+        } else {
+            Cliente nuevo = new Cliente();
+            nuevo.setNombre("Cliente");
+            nuevo.setApellido("Invitado");
+            nuevo.setEmail("invitado_" + System.currentTimeMillis() + "@sintaxis.com");
+            nuevo.setTelefono("000000000");
+            cliente = clienteRepository.save(nuevo);
+        }
 
         Venta venta = new Venta();
         venta.setCliente(cliente);
@@ -171,8 +188,24 @@ public class VentaService implements IVentaService {
     @Override
     @Transactional(readOnly = true)
     public List<VentaResponseDTO> listarTodos() {
-        return ventaRepository.findAllWithDetalles().stream()
+        List<Venta> ventas = ventaRepository.findAllWithDetalles();
+        for (Venta venta : ventas) {
+            org.hibernate.Hibernate.initialize(venta.getDetalles());
+            if (venta.getDetalles() != null) {
+                for (DetalleVenta detalle : venta.getDetalles()) {
+                    if (detalle != null) {
+                        org.hibernate.Hibernate.initialize(detalle.getProducto());
+                    }
+                }
+            }
+            if (venta.getCliente() != null) {
+                org.hibernate.Hibernate.initialize(venta.getCliente());
+            }
+        }
+        return ventas.stream()
+                .filter(v -> v != null)
                 .map(this::toDTO)
+                .filter(d -> d != null)
                 .toList();
     }
 

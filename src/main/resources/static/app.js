@@ -371,10 +371,79 @@ function finalizarCompra() {
         alert('El carrito está vacío.');
         return;
     }
-    alert('¡Compra simulada con éxito! Gracias por su pedido en Sintaxis Kyū.');
-    carrito = [];
-    guardarCarrito();
-    toggleCartDrawer();
+    mostrarModalPago();
+}
+
+async function procesarCompraConMetodo(metodoPago) {
+    const token = localStorage.getItem('sintaxis_token');
+    const idCliente = localStorage.getItem('sintaxis_idCliente');
+
+    let finalIdCliente = null;
+    if (idCliente && idCliente !== 'null' && idCliente !== 'undefined') {
+        finalIdCliente = Number(idCliente);
+    }
+
+    const metodoFinal = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA'].includes(metodoPago) ? metodoPago : 'EFECTIVO';
+
+    const detallesRequest = carrito.map(item => ({
+        idProducto: item.idProducto || item.id,
+        cantidad: item.cantidad
+    }));
+
+    const ventaPayload = {
+        idCliente: finalIdCliente,
+        metodoPago: metodoFinal,
+        estado: 'Pendiente',
+        detalles: detallesRequest
+    };
+
+    try {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+
+        const response = await fetch('/api/ventas', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(ventaPayload)
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.message || 'Error al procesar la venta en el servidor.');
+        }
+
+        const ventaCreada = await response.json();
+        
+        // Vaciado automático inmediato y limpio del carrito tras el éxito
+        carrito = [];
+        guardarCarrito();
+        renderizarCarrito();
+        toggleCartDrawer();
+
+        // Mensaje de éxito profesional con invitación a registrarse si es invitado
+        let mensajeExito = `🎉 ¡Compra procesada con éxito!\n\nID de Venta: #${ventaCreada.idVenta || 'N/A'}\nTotal Pagado: $${ventaCreada.total ? ventaCreada.total.toLocaleString('es-ES', { minimumFractionDigits: 2 }) : '0.00'}\n\n`;
+        if (!finalIdCliente || !token) {
+            mensajeExito += `💡 ¡Regístrate o inicia sesión en Sintaxis Store para acumular puntos, obtener beneficios VIP y consultar todo tu historial de compras!`;
+        } else {
+            mensajeExito += `¡Gracias por tu compra frecuente en Sintaxis Store!`;
+        }
+
+        alert(mensajeExito);
+
+        // Si es invitado, mostrar modal profesional de registro post-compra
+        if (!finalIdCliente || !token) {
+            if (typeof mostrarModalRegistroInvitado === 'function') {
+                mostrarModalRegistroInvitado(ventaCreada);
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error al finalizar compra: ' + err.message);
+    }
 }
 
 // --- Autenticación y Control de Sesión ---
@@ -385,7 +454,7 @@ function actualizarUIAuth() {
     const rol = localStorage.getItem('sintaxis_rol');
 
     if (syncContainer) {
-        if (token && (rol === 'ADMIN' || rol === 'EMPLEADO')) {
+        if (token && (rol === 'ROLE_ADMIN' || rol === 'ROLE_EMPLEADO')) {
             syncContainer.style.display = 'flex';
             syncContainer.innerHTML = `
                 <button class="btn btn-secondary" onclick="cargarProductos()">
@@ -410,7 +479,7 @@ function actualizarUIAuth() {
                 🚪 Cerrar Sesión
             </button>
         `;
-        if (rol === 'ADMIN' || rol === 'EMPLEADO') {
+        if (rol === 'ROLE_ADMIN' || rol === 'ROLE_EMPLEADO') {
             html += `
                 <button class="btn btn-primary" style="background: rgba(16, 185, 129, 0.15); color: var(--success-emerald); border-color: rgba(16, 185, 129, 0.3);" onclick="irPanelAdmin()">
                     ⚙️ Panel Admin
@@ -459,9 +528,19 @@ async function ejecutarLogin(event) {
 
         const data = await response.json();
         
+        let rolGuardar = data.rol;
+        if (rolGuardar && !rolGuardar.startsWith('ROLE_')) {
+            rolGuardar = 'ROLE_' + rolGuardar;
+        }
+
         localStorage.setItem('sintaxis_token', data.token);
-        localStorage.setItem('sintaxis_rol', data.rol);
+        localStorage.setItem('sintaxis_rol', rolGuardar);
         localStorage.setItem('sintaxis_email', data.email);
+        if (data.idCliente) {
+            localStorage.setItem('sintaxis_idCliente', data.idCliente);
+        } else {
+            localStorage.removeItem('sintaxis_idCliente');
+        }
 
         toggleLoginModal(false);
         actualizarUIAuth();
@@ -490,6 +569,7 @@ async function cerrarSesion() {
         localStorage.removeItem('sintaxis_token');
         localStorage.removeItem('sintaxis_rol');
         localStorage.removeItem('sintaxis_email');
+        localStorage.removeItem('sintaxis_idCliente');
         actualizarUIAuth();
         alert('Sesión cerrada correctamente.');
     }
@@ -554,8 +634,12 @@ async function ejecutarRegistroPublico(event) {
         }
 
         const data = await res.json();
+        let rolGuardar = data.rol;
+        if (rolGuardar && !rolGuardar.startsWith('ROLE_')) {
+            rolGuardar = 'ROLE_' + rolGuardar;
+        }
         localStorage.setItem('sintaxis_token', data.token);
-        localStorage.setItem('sintaxis_rol', data.rol);
+        localStorage.setItem('sintaxis_rol', rolGuardar);
         localStorage.setItem('sintaxis_email', data.email);
 
         toggleRegisterModal(false);
@@ -645,8 +729,8 @@ function renderizarTablaUsuarios(usuarios) {
 
     tbody.innerHTML = usuarios.map(u => {
         let badgeRol = 'badge-normal';
-        if (u.rol === 'ADMIN') badgeRol = 'badge-warning';
-        else if (u.rol === 'EMPLEADO') badgeRol = 'badge-active';
+        if (u.rol === 'ROLE_ADMIN' || u.rol === 'ADMIN') badgeRol = 'badge-warning';
+        else if (u.rol === 'ROLE_EMPLEADO' || u.rol === 'EMPLEADO') badgeRol = 'badge-active';
 
         return `
             <tr>
@@ -718,7 +802,7 @@ function toggleAdminModal(abrir) {
     const rol = localStorage.getItem('sintaxis_rol');
 
     if (abrir) {
-        if (!token || (rol !== 'ADMIN' && rol !== 'EMPLEADO')) {
+        if (!token || (rol !== 'ROLE_ADMIN' && rol !== 'ROLE_EMPLEADO' && rol !== 'ADMIN' && rol !== 'EMPLEADO')) {
             alert('Acceso denegado: No tienes permisos de Administrador o Empleado.');
             return;
         }
@@ -792,7 +876,10 @@ function cambiarAdminTab(tab) {
         if (userSection) userSection.style.display = 'none';
         if (ventasSection) ventasSection.style.display = 'flex';
         if (clientesSection) clientesSection.style.display = 'none';
-        if (searchInput) searchInput.style.display = 'none';
+        if (searchInput) {
+            searchInput.style.display = 'none';
+            searchInput.value = ''; // limpiar búsqueda al cambiar de pestaña
+        }
 
         cargarVentasAdmin();
     } else {
@@ -915,11 +1002,18 @@ async function cargarVentasAdmin() {
     tbody.innerHTML = `<tr><td colspan="6" class="loading">Cargando historial de ventas desde /api/ventas...</td></tr>`;
 
     try {
+        console.log('Token enviado a ventas:', token);
         const res = await fetch('/api/ventas', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
 
         if (res.status === 401 || res.status === 403) {
+            const rolActual = localStorage.getItem('sintaxis_rol');
+            if (rolActual === 'ROLE_CLIENTE' || rolActual === 'CLIENTE') {
+                toggleAdminModal(false);
+                alert('La sección de gestión de ventas está reservada para Administradores y Empleados.');
+                return;
+            }
             localStorage.removeItem('sintaxis_token');
             localStorage.removeItem('sintaxis_rol');
             localStorage.removeItem('sintaxis_email');
@@ -974,7 +1068,7 @@ function renderizarTablaVentas(ventas) {
         return `
             <tr>
                 <td style="padding: 0.8rem 1rem; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--accent-cyan);">
-                    #${v.idVenta || v.id}
+                    #${v.idVenta}
                 </td>
                 <td style="padding: 0.8rem 1rem; color: var(--text-secondary); font-size: 0.8rem;">
                     ${fechaFormateada}
@@ -989,7 +1083,7 @@ function renderizarTablaVentas(ventas) {
                     <span class="badge ${badgeEstado}">${v.estado}</span>
                 </td>
                 <td style="padding: 0.8rem 1rem; text-align: right;">
-                    <select onchange="cambiarEstadoVentaAdmin(${v.idVenta || v.id}, this.value)" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.3rem 0.5rem; border-radius: var(--radius); font-size: 0.75rem;">
+                    <select onchange="cambiarEstadoVentaAdmin(${v.idVenta}, this.value)" style="background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.3rem 0.5rem; border-radius: var(--radius); font-size: 0.75rem;">
                         <option value="" disabled selected>Cambiar estado...</option>
                         <option value="Pendiente">Pendiente</option>
                         <option value="Pagada">Pagada</option>

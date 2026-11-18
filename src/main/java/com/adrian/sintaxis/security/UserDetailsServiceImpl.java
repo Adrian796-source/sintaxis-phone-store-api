@@ -20,11 +20,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return usuarioRepository.findByEmail(email)
-                .map(usuario -> new User(
-                        usuario.getEmail(),
-                        usuario.getPassword(),
-                        List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name()))
-                ))
+                .map(usuario -> {
+                    String rolName = usuario.getRol() != null ? usuario.getRol().name() : "CLIENTE";
+                    String authorityName = rolName.startsWith("ROLE_") ? rolName : "ROLE_" + rolName;
+                    return new User(
+                            usuario.getEmail(),
+                            usuario.getPassword(),
+                            List.of(new SimpleGrantedAuthority(authorityName))
+                    );
+                })
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));
     }
 }

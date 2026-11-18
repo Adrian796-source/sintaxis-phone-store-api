@@ -7,9 +7,10 @@ Este documento define los principios innegociables y las reglas arquitectónicas
 - **No se permite** lógica de negocio en los controladores; toda la lógica debe residir en la capa de Servicio.
 - Uso de DTOs (`RequestDTO` y `ResponseDTO`) para la transferencia de datos. **Nunca** exponer las Entidades de la base de datos directamente.
 
-## 2. Seguridad
+## 2. Seguridad y Encriptación
 - Todos los endpoints de escritura (POST, PUT, DELETE) deben estar protegidos con JWT y roles (`ADMIN`, `EMPLEADO`).
 - Solo los GET de productos (catálogo) son públicos.
+- **Cifrado de Credenciales:** El único método de encriptación permitido y soportado para las contraseñas de los usuarios es **BCrypt (`BCryptPasswordEncoder`)** a través de Spring Security. Está prohibido el uso de texto plano o algoritmos no seguros.
 - El backend tiene la última palabra: Si un usuario no tiene el rol adecuado, la petición debe ser rechazada con un error `403 Forbidden` usando `@PreAuthorize`.
 
 ## 3. Base de Datos

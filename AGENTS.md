@@ -31,6 +31,8 @@
 - **Estado del Proyecto:** SIEMPRE debes leer el archivo `MEMORY.md` al iniciar una tarea para entender qué está hecho y qué falta. NO intentes volver a implementar funcionalidades que ya figuran como completadas.
 - **Patrón de Diseño:** Siempre usar el patrón MVC (Controller -> Service -> Repository).
 - **DTOs:** No mezclar Entidades con DTOs. El controlador siempre devuelve DTOs.
+- **Seguridad y Encriptación:** Usar exclusivamente **BCrypt (`BCryptPasswordEncoder`)** para las contraseñas. Está prohibido cambiar el algoritmo de hashing o almacenar contraseñas en texto plano para evitar desajustes de permisos en ventas y clientes.
 - **Documentación:** Documentar cada endpoint con Swagger/OpenAPI.
 - **Testing:** Escribir tests unitarios con JUnit 5 y Mockito para la capa de Servicio.
 - Actualización de Memoria: Cada vez que completes una tarea o implementes una nueva funcionalidad de forma exitosa, DEBES actualizar el archivo MEMORY.md marcando la tarea como completada y agregando un resumen de lo que hiciste. No se considera una tarea terminada hasta que el MEMORY.md esté actualizado.
+- **Enfoque y Estándar Profesional (E-commerce / App de Escritorio):** Todas las características, flujos de usuario (como compras de invitados, manejo de carritos, modales, validaciones y gestión de inventario) y componentes deben implementarse bajo los estándares más altos de la industria para e-commerce y aplicaciones de escritorio profesionales (robustez, manejo elegante de excepciones, retroalimentación visual clara para el usuario, transacciones seguras y flujos sin fricción).

@@ -60,10 +60,14 @@ public class AuthService {
             throw new EmailYaExistenteException("Ya existe un usuario con ese email");
         }
 
-        // 2. VALIDAR QUE EL ROL SEA VÁLIDO
+        // 2. VALIDAR QUE EL ROL SEA VÁLIDO (Acepta con o sin prefijo ROLE_)
         Rol rol;
         try {
-            rol = Rol.valueOf(dto.getRol().toUpperCase());
+            String rolStr = dto.getRol().toUpperCase();
+            if (rolStr.startsWith("ROLE_")) {
+                rolStr = rolStr.substring(5);
+            }
+            rol = Rol.valueOf(rolStr);
         } catch (IllegalArgumentException e) {
             throw new RolInvalidoException("Rol inválido. Los valores permitidos son: ADMIN, EMPLEADO, CLIENTE");
         }

@@ -152,12 +152,21 @@ class VentaServiceTest {
         verify(clienteService).agregarPuntos(eq(1L), anyInt());
     }
     @Test
-    void guardar_ShouldThrowException_WhenClienteNotFound() {
+    void guardar_ShouldCreateGuestClient_WhenClienteNotFound() {
         when(clienteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente);
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto1));
+        when(productoRepository.findById(2L)).thenReturn(Optional.of(producto2));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> {
+            Venta v = invocation.getArgument(0);
+            v.setIdVenta(1L);
+            return v;
+        });
 
-        assertThatThrownBy(() -> ventaService.guardar(ventaRequestDTO))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Cliente no encontrado con id: 1");
+        VentaResponseDTO result = ventaService.guardar(ventaRequestDTO);
+
+        assertThat(result).isNotNull();
+        verify(clienteRepository).save(any(Cliente.class));
     }
 
     @Test

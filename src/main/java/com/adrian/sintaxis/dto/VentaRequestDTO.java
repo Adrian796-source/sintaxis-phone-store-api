@@ -15,10 +15,9 @@ import java.util.List;
 @Schema(description = "DTO para crear una nueva venta")
 public class VentaRequestDTO {
 
-    @NotNull(message = "El cliente es obligatorio")
-    @Schema(description = "ID del cliente que realiza la compra",
+    @Schema(description = "ID del cliente que realiza la compra (opcional para invitados)",
             example = "1",
-            requiredMode = Schema.RequiredMode.REQUIRED)
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Long idCliente;
 
     @NotBlank(message = "El estado es obligatorio")

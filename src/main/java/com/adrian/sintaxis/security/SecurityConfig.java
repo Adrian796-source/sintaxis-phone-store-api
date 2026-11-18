@@ -33,10 +33,10 @@ public class SecurityConfig {
     private static final String CELULARES_PATH = "/api/celulares/**";
     private static final String ACCESORIOS_PATH = "/api/accesorios/**";
 
-    // 🔐 Constantes para roles
-    private static final String ROLE_ADMIN = "ADMIN";
-    private static final String ROLE_EMPLEADO = "EMPLEADO";
-    private static final String ROLE_CLIENTE = "CLIENTE";
+    // 🔐 Constantes para roles con prefijo ROLE_
+    private static final String ROLE_ADMIN = "ROLE_ADMIN";
+    private static final String ROLE_EMPLEADO = "ROLE_EMPLEADO";
+    private static final String ROLE_CLIENTE = "ROLE_CLIENTE";
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
@@ -48,6 +48,7 @@ public class SecurityConfig {
 
         // 🔴 SOLO ORÍGENES ESPECÍFICOS Y CONOCIDOS
         configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:8080",
                 "http://localhost:3000",      // React desarrollo
                 "http://localhost:5173",      // Vite desarrollo
                 "http://localhost:4200",      // Angular desarrollo
@@ -109,26 +110,31 @@ public class SecurityConfig {
                         // Endpoints públicos de Auth e Imágenes
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/imagenes/**").permitAll()
                         .requestMatchers("/api/auth/perfil").authenticated()
-                        .requestMatchers("/api/auth/usuarios").hasRole(ROLE_ADMIN)
+                        .requestMatchers("/api/auth/usuarios").hasAuthority(ROLE_ADMIN)
 
                         // Productos - GET público, modificaciones solo ADMIN y EMPLEADO
                         .requestMatchers(HttpMethod.GET, CELULARES_PATH).permitAll()
                         .requestMatchers(HttpMethod.GET, ACCESORIOS_PATH).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, CELULARES_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.PUT, CELULARES_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.DELETE, CELULARES_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.POST, CELULARES_PATH).hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.PUT, CELULARES_PATH).hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.DELETE, CELULARES_PATH).hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
 
-                        .requestMatchers(HttpMethod.POST, ACCESORIOS_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.PUT, ACCESORIOS_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
-                        .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.POST, ACCESORIOS_PATH).hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.PUT, ACCESORIOS_PATH).hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
 
                         // Clientes - solo ADMIN
-                        .requestMatchers("/api/clientes/**").hasRole("ADMIN")
+                        .requestMatchers("/api/clientes/**").hasAuthority(ROLE_ADMIN)
 
-                        // Ventas - ADMIN y EMPLEADO, mis-ventas para CLIENTE
-                        .requestMatchers("/api/ventas/reportes/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
-                        .requestMatchers("/api/ventas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLEADO", "ADMIN", "EMPLEADO")
+                        // Ventas - ADMIN y EMPLEADO, mis-ventas y creación público (para invitados) o autenticado
+                        .requestMatchers("/api/ventas/mis-ventas").hasAnyAuthority(ROLE_CLIENTE, ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers("/api/ventas/reportes/**").hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.POST, "/api/ventas").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/ventas/**").hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.PUT, "/api/ventas/**").hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.DELETE, "/api/ventas/**").hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
+                        .requestMatchers(HttpMethod.PATCH, "/api/ventas/**").hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
 
                         // Cualquier otro endpoint requiere autenticación
                         .anyRequest().authenticated()
