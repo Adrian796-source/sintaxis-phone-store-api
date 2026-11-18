@@ -395,12 +395,14 @@
                             <th style="background: #0E1017; padding: 0.8rem 1rem;">Email</th>
                             <th style="background: #0E1017; padding: 0.8rem 1rem;">Teléfono</th>
                             <th style="background: #0E1017; padding: 0.8rem 1rem;">Dirección</th>
-                            <th style="background: #0E1017; padding: 0.8rem 1rem; text-align: right;">Estado / Puntos</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Dirección</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem;">Estado / Puntos</th>
+                            <th style="background: #0E1017; padding: 0.8rem 1rem; text-align: right;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="adminClienteTableBody">
                         <tr>
-                            <td colspan="5" class="loading">Cargando clientes...</td>
+                            <td colspan="6" class="loading">Cargando clientes...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -565,5 +567,47 @@
 
     <script src="modal_pago.js" defer></script>
     <script src="app.js" defer></script>
-</body>
+
+    <!-- Modal Editar Cliente Admin -->
+    <div id="clienteFormModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 10, 15, 0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(6px); padding: 1.5rem;">
+        <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); width: 100%; max-width: 520px; box-shadow: var(--shadow-kyu); overflow: hidden;">
+            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0E1017;">
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-main);">✏️ Editar Datos del Cliente</h3>
+                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="toggleClienteFormModal(false)">✕</button>
+            </div>
+            <form id="clienteForm" onsubmit="guardarClienteAdmin(event)" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <input type="hidden" id="formClienteId">
+                <input type="hidden" id="formClienteEmail">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Nombre *</label>
+                        <input type="text" id="formClienteNombre" required style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Apellido *</label>
+                        <input type="text" id="formClienteApellido" required style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Teléfono *</label>
+                        <input type="text" id="formClienteTelefono" required placeholder="Ej: 3514856789" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem;">Dirección *</label>
+                        <input type="text" id="formClienteDireccion" required placeholder="Ej: Av. Colón 1234" style="width: 100%; background: var(--bg-canvas); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.6rem; border-radius: var(--radius); font-size: 0.875rem;">
+                    </div>
+                </div>
+
+                <div id="clienteFormErrorMsg" style="color: var(--danger-rose); font-size: 0.85rem; display: none;"></div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleClienteFormModal(false)">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </html>

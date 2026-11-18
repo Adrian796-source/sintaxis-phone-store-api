@@ -952,7 +952,7 @@ function renderizarTablaClientes(clientes) {
     if (!tbody) return;
 
     if (clientes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="padding: 3rem 1rem;">No hay clientes registrados en el sistema.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="padding: 3rem 1rem;">No hay clientes registrados en el sistema.</td></tr>`;
         return;
     }
 
@@ -961,12 +961,13 @@ function renderizarTablaClientes(clientes) {
         const email = c.email || 'Sin email';
         const telefono = c.telefono || 'Sin tel.';
         const direccion = c.direccion || 'Sin dir.';
+        const idCliente = c.idCliente || c.id;
 
         return `
             <tr>
                 <td style="padding: 0.8rem 1rem;">
                     <div class="product-title" style="font-size: 0.85rem;">${escapeHtml(nombreCompleto)}</div>
-                    <div style="font-size: 0.70rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">ID: #${c.idCliente || c.id}</div>
+                    <div style="font-size: 0.70rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">ID: #${idCliente}</div>
                 </td>
                 <td style="padding: 0.8rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">
                     ${escapeHtml(email)}
@@ -977,12 +978,89 @@ function renderizarTablaClientes(clientes) {
                 <td style="padding: 0.8rem 1rem; color: var(--text-secondary); font-size: 0.8rem;">
                     ${escapeHtml(direccion)}
                 </td>
-                <td style="padding: 0.8rem 1rem; text-align: right;">
+                <td style="padding: 0.8rem 1rem;">
                     <span class="badge badge-active">Activo</span>
+                    ${c.puntosAcumulados !== undefined ? `<div style="font-size: 0.70rem; color: var(--accent-cyan); margin-top: 0.2rem;">🌟 ${c.puntosAcumulados} pts</div>` : ''}
+                </td>
+                <td style="padding: 0.8rem 1rem; text-align: right;">
+                    <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick='abrirEditarCliente(${JSON.stringify(c)})'>✏️ Editar</button>
                 </td>
             </tr>
         `;
     }).join('');
+}
+
+function toggleClienteFormModal(show) {
+    const modal = document.getElementById('clienteFormModal');
+    const errorMsg = document.getElementById('clienteFormErrorMsg');
+    if (modal) {
+        modal.style.display = show ? 'flex' : 'none';
+        if (!show && errorMsg) {
+            errorMsg.style.display = 'none';
+        }
+    }
+}
+
+function abrirEditarCliente(cliente) {
+    const id = cliente.idCliente || cliente.id;
+    document.getElementById('formClienteId').value = id;
+    document.getElementById('formClienteNombre').value = cliente.nombre || '';
+    document.getElementById('formClienteApellido').value = cliente.apellido || '';
+    document.getElementById('formClienteEmail').value = cliente.email || '';
+    document.getElementById('formClienteTelefono').value = cliente.telefono || '';
+    document.getElementById('formClienteDireccion').value = cliente.direccion || '';
+
+    toggleClienteFormModal(true);
+}
+
+async function guardarClienteAdmin(event) {
+    event.preventDefault();
+    const token = localStorage.getItem('sintaxis_token');
+    const errorMsg = document.getElementById('clienteFormErrorMsg');
+    if (errorMsg) errorMsg.style.display = 'none';
+
+    const id = document.getElementById('formClienteId').value;
+    const nombre = document.getElementById('formClienteNombre').value.trim();
+    const apellido = document.getElementById('formClienteApellido').value.trim();
+    const email = document.getElementById('formClienteEmail').value.trim();
+    const telefono = document.getElementById('formClienteTelefono').value.trim();
+    const direccion = document.getElementById('formClienteDireccion').value.trim();
+
+    const dto = {
+        nombre,
+        apellido,
+        email,
+        telefono,
+        direccion
+    };
+
+    try {
+        const res = await fetch(`/api/clientes/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(dto)
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.message || 'Error al actualizar el cliente.');
+        }
+
+        toggleClienteFormModal(false);
+        alert('✅ ¡Cliente actualizado exitosamente!');
+        cargarClientesAdmin();
+    } catch (err) {
+        console.error(err);
+        if (errorMsg) {
+            errorMsg.textContent = err.message;
+            errorMsg.style.display = 'block';
+        } else {
+            alert('Error: ' + err.message);
+        }
+    }
 }
 
 let ventasGlobal = [];
