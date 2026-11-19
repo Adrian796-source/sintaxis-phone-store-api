@@ -53,6 +53,7 @@ public class ClienteController {
 
     @Operation(summary = "Eliminar cliente", description = "Borrado lógico: marca el cliente como inactivo sin eliminarlo de la base de datos.")
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         clienteService.eliminar(id);
         return ResponseEntity.noContent().build();

@@ -178,7 +178,7 @@ public class ClienteService implements IClienteService {
 
     @Override
     public List<ClienteResponseDTO> listarTodos() {
-        return clienteRepository.findAll().stream().map(this::toDTO).toList();
+        return clienteRepository.findByActivoTrue().stream().map(this::toDTO).toList();
     }
 
     @Override

@@ -19,6 +19,6 @@
 - [x] **Gestión Dinámica de Subcategorías y Relación por ID:** Selector de subcategoría en el formulario de accesorios configurado con el ID (`value="${idSub}"`) y envío correcto de `subcategoriaId` en los payloads de guardado/actualización de accesorios, resolviendo definitivamente el problema del 'N/A' en la tabla.
 
 ## Tareas Completadas Recientes
-- [x] **Corrección en el Registro de Invitados Post-Compra:**
-  - Se ajustó el envío del rol en `modal_pago.js` de `"ROLE_CLIENTE"` a `"CLIENTE"` para coincidir exactamente con el enum de roles aceptados por el backend.
-  - Se fortaleció el backend (`AuthService.java`) para que acepte tanto `CLIENTE` como `ROLE_CLIENTE` de manera robusta, evitando errores de `RolInvalidoException` (400 Bad Request) tras el registro de un cliente invitado.
+- [x] **Alineación Correcta de Columnas en la Tabla de Clientes (Frontend):** Se reestructuró la tabla de Clientes en `src/main/resources/static/index.html` y `src/main/resources/static/app.js` separando la información en **7 columnas exactas**: `ID / Nombre`, `Email`, `Teléfono`, `Dirección`, `Estado`, `Puntos` y `Acciones`. Ahora los puntos y los botones de acción (Editar/Eliminar) tienen sus columnas propias e independientes.
+- [x] **Gestión de Borrado Lógico de Clientes:** Actualización de `ClienteRepository` con `findByActivoTrue()` y `ClienteService.listarTodos()` para filtrar únicamente los clientes activos.
+- [x] **Suite de Tests Validada:** Todos los tests de controladores y servicios pasan exitosamente (`BUILD SUCCESS`).

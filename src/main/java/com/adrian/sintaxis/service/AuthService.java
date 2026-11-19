@@ -204,6 +204,26 @@ public class AuthService {
                 .toList();
     }
 
+    @Transactional
+    public void eliminarUsuario(Long idUsuarioAEliminar, String emailAdminLogueado) {
+        Usuario usuarioAEliminar = usuarioRepository.findById(idUsuarioAEliminar)
+                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado con id: " + idUsuarioAEliminar));
+
+        if (usuarioAEliminar.getEmail().equalsIgnoreCase(emailAdminLogueado)) {
+            throw new IllegalArgumentException("No puedes eliminar tu propia cuenta de administrador.");
+        }
+
+        // Si tiene un cliente asociado, rompemos la relación bidireccional limpiamente para evitar TransientObjectException / FK constraints
+        if (usuarioAEliminar.getCliente() != null) {
+            Cliente cliente = usuarioAEliminar.getCliente();
+            cliente.setUsuario(null);
+            usuarioAEliminar.setCliente(null);
+            clienteRepository.save(cliente);
+        }
+
+        usuarioRepository.delete(usuarioAEliminar);
+    }
+
     private ClienteResponseDTO toClienteResponseDTO(Cliente cliente) {
         ClienteResponseDTO dto = new ClienteResponseDTO();
         dto.setIdCliente(cliente.getIdCliente());

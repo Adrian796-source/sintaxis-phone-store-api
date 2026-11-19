@@ -31,7 +31,11 @@ Este documento define los principios innegociables y las reglas arquitectónicas
 - Todo desarrollo debe seguir el flujo **SDD** (Spec -> Plan -> Tasks -> Implement). La IA no escribe código sin una especificación aprobada.
 - Al terminar una tarea, la IA debe actualizar el archivo `MEMORY.md` marcando lo completado y lo pendiente.
 
-## 7. Seguridad Visual (Frontend)
+## 7. Integridad Referencial y Protección contra Regresiones (Cero Rupturas Indirectas)
+- Está estrictamente prohibido introducir código, refactorizaciones o cambios en clases fuertemente acopladas o relacionadas bidireccionalmente (como `Usuario`, `Cliente`, `Venta`) que puedan romper indirectamente funcionalidades ya logradas.
+- Antes de modificar métodos críticos de eliminación o persistencia en cascada, se deben auditar todas las referencias cruzadas y optar por diseños seguros (como borrado lógico o desvinculación explícita de referencias) para garantizar la integridad referencial, el historial de ventas y la estabilidad del sistema.
+
+## 8. Seguridad Visual (Frontend)
 - La interfaz de usuario **NUNCA** debe mostrar componentes de administración (botones de panel, formularios de creación/edición) a menos que el `localStorage` contenga un token válido y el rol sea explícitamente `ADMIN` o `EMPLEADO`.
 - Las validaciones de visibilidad en JavaScript deben ser estrictas: `if (rol !== 'ADMIN' && rol !== 'EMPLEADO') { ocultar(); return; }`.
 - **Prohibido** usar variables intermedias que puedan fallar o quedar indefinidas al evaluar los roles (esto evita que el botón de "Panel Admin" se muestre por error a los clientes).

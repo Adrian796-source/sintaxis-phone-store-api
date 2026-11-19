@@ -166,7 +166,7 @@ class ClienteServiceTest {
         cliente2.setPuntosAcumulados(0);
         cliente2.setActivo(true);
 
-        when(clienteRepository.findAll()).thenReturn(Arrays.asList(cliente, cliente2));
+        when(clienteRepository.findByActivoTrue()).thenReturn(Arrays.asList(cliente, cliente2));
 
         List<ClienteResponseDTO> result = clienteService.listarTodos();
 
@@ -176,17 +176,17 @@ class ClienteServiceTest {
         assertThat(result.get(1).getIdCliente()).isEqualTo(2L);
         assertThat(result.get(1).getNombre()).isEqualTo("Maria");
 
-        verify(clienteRepository).findAll();
+        verify(clienteRepository).findByActivoTrue();
     }
 
     @Test
     void listarTodos_ShouldReturnEmpty_WhenNoClientes() {
-        when(clienteRepository.findAll()).thenReturn(List.of());
+        when(clienteRepository.findByActivoTrue()).thenReturn(List.of());
 
         List<ClienteResponseDTO> result = clienteService.listarTodos();
 
         assertThat(result).isEmpty();
-        verify(clienteRepository).findAll();
+        verify(clienteRepository).findByActivoTrue();
     }
 
     // ==================== TESTS ACTUALIZAR ====================

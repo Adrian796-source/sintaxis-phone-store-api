@@ -37,6 +37,14 @@ public class AuthController {
         return ResponseEntity.ok(authService.listarUsuarios());
     }
 
+    @Operation(summary = "Eliminar usuario", description = "Elimina lógicamente o desactiva/elimina un usuario del sistema. Requiere rol ADMIN.")
+    @DeleteMapping("/usuarios/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> eliminarUsuario(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        authService.eliminarUsuario(id, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "Login", description = "Autentica al usuario y devuelve un token JWT para usar en los endpoints protegidos.")
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO dto) {

@@ -748,7 +748,7 @@ function renderizarTablaUsuarios(usuarios) {
                     ${u.activo !== false ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>'}
                 </td>
                 <td style="padding: 0.8rem 1rem; text-align: right;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">Sistema</span>
+                    <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--danger-rose); color: var(--danger-rose);" onclick="eliminarUsuarioAdmin(${u.idUsuario}, '${escapeHtml(u.email)}')">🗑️ Eliminar</button>
                 </td>
             </tr>
         `;
@@ -791,6 +791,37 @@ async function guardarUsuarioAdmin(event) {
         console.error(err);
         errorMsg.textContent = err.message || 'Error al crear usuario.';
         errorMsg.style.display = 'block';
+    }
+}
+
+async function eliminarUsuarioAdmin(idUsuario, emailUsuario) {
+    const adminEmail = localStorage.getItem('sintaxis_email');
+    if (adminEmail && adminEmail.toLowerCase() === emailUsuario.toLowerCase()) {
+        alert('Acción no permitida: No puedes eliminar tu propia cuenta de administrador.');
+        return;
+    }
+
+    if (!confirm(`¿Estás seguro de que deseas eliminar al usuario #${idUsuario} (${emailUsuario})?`)) {
+        return;
+    }
+
+    const token = localStorage.getItem('sintaxis_token');
+    try {
+        const res = await fetch(`/api/auth/usuarios/${idUsuario}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.message || 'Error al eliminar el usuario.');
+        }
+
+        alert('Usuario eliminado correctamente.');
+        cargarUsuariosAdmin();
+    } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
     }
 }
 
@@ -952,7 +983,7 @@ function renderizarTablaClientes(clientes) {
     if (!tbody) return;
 
     if (clientes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="padding: 3rem 1rem;">No hay clientes registrados en el sistema.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="padding: 3rem 1rem;">No hay clientes registrados en el sistema.</td></tr>`;
         return;
     }
 
@@ -962,6 +993,7 @@ function renderizarTablaClientes(clientes) {
         const telefono = c.telefono || 'Sin tel.';
         const direccion = c.direccion || 'Sin dir.';
         const idCliente = c.idCliente || c.id;
+        const puntos = c.puntosAcumulados !== undefined ? c.puntosAcumulados : 0;
 
         return `
             <tr>
@@ -980,10 +1012,13 @@ function renderizarTablaClientes(clientes) {
                 </td>
                 <td style="padding: 0.8rem 1rem;">
                     <span class="badge badge-active">Activo</span>
-                    ${c.puntosAcumulados !== undefined ? `<div style="font-size: 0.70rem; color: var(--accent-cyan); margin-top: 0.2rem;">🌟 ${c.puntosAcumulados} pts</div>` : ''}
                 </td>
-                <td style="padding: 0.8rem 1rem; text-align: right;">
+                <td style="padding: 0.8rem 1rem; font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan); font-size: 0.85rem;">
+                    🌟 ${puntos} pts
+                </td>
+                <td style="padding: 0.8rem 1rem; text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
                     <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick='abrirEditarCliente(${JSON.stringify(c)})'>✏️ Editar</button>
+                    <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--danger-rose); color: var(--danger-rose);" onclick="eliminarClienteAdmin(${idCliente}, '${escapeHtml(nombreCompleto)}')">🗑️ Eliminar</button>
                 </td>
             </tr>
         `;
@@ -1035,8 +1070,16 @@ async function guardarClienteAdmin(event) {
     };
 
     try {
-        const res = await fetch(`/api/clientes/${id}`, {
-            method: 'PUT',
+        let url = '/api/clientes';
+        let method = 'POST';
+
+        if (id) {
+            url = `/api/clientes/${id}`;
+            method = 'PUT';
+        }
+
+        const res = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
@@ -1046,11 +1089,11 @@ async function guardarClienteAdmin(event) {
 
         if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.message || 'Error al actualizar el cliente.');
+            throw new Error(errData.message || 'Error al guardar el cliente.');
         }
 
         toggleClienteFormModal(false);
-        alert('✅ ¡Cliente actualizado exitosamente!');
+        alert(id ? '✅ ¡Cliente actualizado exitosamente!' : '✅ ¡Cliente creado exitosamente!');
         cargarClientesAdmin();
     } catch (err) {
         console.error(err);
@@ -1060,6 +1103,31 @@ async function guardarClienteAdmin(event) {
         } else {
             alert('Error: ' + err.message);
         }
+    }
+}
+
+async function eliminarClienteAdmin(idCliente, nombreCliente) {
+    if (!confirm(`¿Estás seguro de que deseas dar de baja (borrado lógico) al cliente #${idCliente} (${nombreCliente})?`)) {
+        return;
+    }
+
+    const token = localStorage.getItem('sintaxis_token');
+    try {
+        const res = await fetch(`/api/clientes/${idCliente}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.message || 'Error al eliminar el cliente.');
+        }
+
+        alert('Cliente dado de baja correctamente.');
+        cargarClientesAdmin();
+    } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
     }
 }
 
