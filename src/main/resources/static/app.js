@@ -1353,6 +1353,9 @@ function renderizarTablaAdmin(productos) {
                 </td>
                 <td style="padding: 0.8rem 1rem; text-align: right;">
                     <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+                        <button class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; color: var(--accent-cyan); border-color: rgba(6,182,212,0.3);" onclick="abrirModalAgregarStock(${idProd}, '${tipo}', '${escapeHtml(p.nombre).replace(/'/g, "\\'")}', ${p.stock})">
+                            📦 + Stock
+                        </button>
                         <button class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="prepararEditarProducto(${idProd}, '${tipo}')">
                             ✏️ Editar
                         </button>
@@ -1693,6 +1696,125 @@ async function guardarSubcategoriaAdmin(event) {
             errorMsg.style.display = 'block';
         } else {
             alert(err.message || 'Error al guardar subcategoría.');
+        }
+    }
+}
+
+// --- Gestión de Stock Rápido en Panel Admin ---
+function toggleStockModal(abrir) {
+    const modal = document.getElementById('stockModal');
+    const errorMsg = document.getElementById('stockFormErrorMsg');
+    if (errorMsg) {
+        errorMsg.style.display = 'none';
+        errorMsg.textContent = '';
+    }
+    if (modal) {
+        modal.style.display = abrir ? 'flex' : 'none';
+    }
+}
+
+function abrirModalAgregarStock(id, tipo, nombre, stockActual) {
+    document.getElementById('stockProdId').value = id;
+    document.getElementById('stockProdTipo').value = tipo;
+    document.getElementById('stockCantidadInput').value = 10;
+    document.getElementById('stockProdInfo').innerHTML = `Producto: <strong>${nombre}</strong> (Tipo: <span style="color: var(--accent-cyan);">${tipo === 'celular' ? 'Celular' : 'Accesorio'}</span>)<br>Stock actual: <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--accent-cyan);">${stockActual} unidades</span>`;
+    toggleStockModal(true);
+}
+
+async function ejecutarAgregarStock(event) {
+    event.preventDefault();
+    const token = localStorage.getItem('sintaxis_token');
+    const errorMsg = document.getElementById('stockFormErrorMsg');
+    if (errorMsg) errorMsg.style.display = 'none';
+
+    if (!token) {
+        alert('Debe iniciar sesión como ADMIN o EMPLEADO.');
+        return;
+    }
+
+    const id = document.getElementById('stockProdId').value;
+    const tipo = document.getElementById('stockProdTipo').value;
+    const cantidadAgregar = parseInt(document.getElementById('stockCantidadInput').value, 10);
+
+    if (isNaN(cantidadAgregar) || cantidadAgregar <= 0) {
+        if (errorMsg) {
+            errorMsg.textContent = 'Por favor ingrese una cantidad válida mayor a 0.';
+            errorMsg.style.display = 'block';
+        }
+        return;
+    }
+
+    // Buscar producto actual en memoria para obtener sus datos completos y sumar al stock
+    let producto = null;
+    if (tipo === 'celular') {
+        producto = celularesGlobal.find(p => (p.idProducto || p.id) == id);
+    } else {
+        producto = accesoriosGlobal.find(p => (p.idProducto || p.id) == id);
+    }
+
+    if (!producto) {
+        alert('No se encontró el producto en la memoria.');
+        return;
+    }
+
+    const nuevoStock = (producto.stock || 0) + cantidadAgregar;
+    const endpoint = tipo === 'celular' ? `/api/celulares/${id}` : `/api/accesorios/${id}`;
+
+    // Construir DTO con todos los campos requeridos para la actualización PUT
+    let dto = {
+        nombre: producto.nombre,
+        marca: producto.marca,
+        descripcion: producto.descripcion,
+        precio: producto.precio,
+        stock: nuevoStock,
+        stockMinimo: producto.stockMinimo !== undefined ? producto.stockMinimo : 5,
+        imagenUrl: producto.imagenUrl
+    };
+
+    if (tipo === 'celular') {
+        dto.modelo = producto.modelo;
+        dto.sistemaOperativo = producto.sistemaOperativo;
+        dto.almacenamientoGB = producto.almacenamientoGB;
+        dto.ramGB = producto.ramGB;
+        dto.procesador = producto.procesador;
+        dto.pantallaPulgadas = producto.pantallaPulgadas;
+        dto.bateriaMAh = producto.bateriaMAh;
+        dto.color = producto.color;
+        dto.esLibre = producto.esLibre;
+    } else {
+        dto.subcategoriaId = producto.subcategoriaId || (producto.subcategoria && producto.subcategoria.idSubcategoria);
+        dto.material = producto.material;
+        dto.color = producto.color;
+        dto.esOriginal = producto.esOriginal;
+        dto.marcasCompatibles = producto.marcasCompatibles || [];
+    }
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(dto)
+        });
+
+        if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.message || `Error al actualizar el stock. Status: ${res.status}`);
+        }
+
+        alert(`¡Stock actualizado con éxito! Se agregaron ${cantidadAgregar} unidades. Stock total: ${nuevoStock}`);
+        toggleStockModal(false);
+        await cargarProductos();
+        cargarProductosAdmin();
+    } catch (err) {
+        console.error(err);
+        if (errorMsg) {
+            errorMsg.textContent = err.message || 'Error al actualizar el stock.';
+            errorMsg.style.display = 'block';
+        } else {
+            alert(err.message || 'Error al actualizar el stock.');
         }
     }
 }
