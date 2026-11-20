@@ -1,3 +1,49 @@
+/* Estilos para Notificaciones Toast (Kyū Dark Mode) */
+@keyframes toastSlideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toastFadeOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+.toast-notification {
+    pointer-events: auto;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 0.875rem 1.25rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 280px;
+    max-width: 400px;
+    font-size: 0.875rem;
+    color: var(--text-main);
+    animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    position: relative;
+    overflow: hidden;
+}
+
+.toast-notification.success {
+    border-left: 4px solid var(--success-emerald);
+}
+
+.toast-notification.error {
+    border-left: 4px solid var(--danger-rose);
+}
+
+.toast-notification.info {
+    border-left: 4px solid var(--accent-cyan);
+}
+
+.toast-notification.hiding {
+    animation: toastFadeOut 0.25s ease-in forwards;
+}
+
 :root {
     --bg-canvas: #090A0F;
     --surface: #12141C;

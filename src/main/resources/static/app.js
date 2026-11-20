@@ -199,7 +199,10 @@ function renderizarProductos(productos) {
 }
 
 function crearTarjetaProducto(p) {
-    const esStockBajo = p.stock <= p.stockMinimo;
+    const stockActual = p.stock !== undefined ? p.stock : 0;
+    const esAgotado = stockActual <= 0;
+    const esStockBajo = !esAgotado && (stockActual <= p.stockMinimo);
+
     const imagenDefault = p.imagenUrl && p.imagenUrl.trim() !== '' 
         ? (p.imagenUrl.startsWith('http://localhost:8080/api/productos/') 
             ? p.imagenUrl.replace('/api/productos/', '/api/imagenes/') 
@@ -214,12 +217,18 @@ function crearTarjetaProducto(p) {
         badgeHtml = `<span class="badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border-color: rgba(236,72,153,0.3);">${escapeHtml(sub)}</span>`;
     }
 
-    if (esStockBajo) {
+    if (esAgotado) {
+        badgeHtml += ` <span class="badge" style="background: rgba(244, 63, 94, 0.2); color: var(--danger-rose); border-color: rgba(244, 63, 94, 0.4); font-weight: 700; box-shadow: 0 0 10px rgba(244,63,94,0.3);">AGOTADO</span>`;
+    } else if (esStockBajo) {
         badgeHtml += ` <span class="badge badge-warning" style="margin-left: 0.25rem;">Stock Bajo</span>`;
     }
 
+    const botonAgregarHtml = esAgotado 
+        ? `<button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.75rem; opacity: 0.5; cursor: not-allowed;" disabled>🚫 Agotado</button>`
+        : `<button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.75rem;" onclick='agregarAlCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'>🛒 Agregar</button>`;
+
     return `
-        <div class="product-card">
+        <div class="product-card" ${esAgotado ? 'style="opacity: 0.85;"' : ''}>
             <div class="product-card-img-container">
                 <div class="product-card-badge">${badgeHtml}</div>
                 <img src="${imagenDefault}" alt="${escapeHtml(p.nombre)}" class="product-card-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';">
@@ -230,9 +239,7 @@ function crearTarjetaProducto(p) {
                 <div class="product-card-desc" title="${escapeHtml(p.descripcion || '')}">${escapeHtml(p.descripcion || 'Sin descripción disponible.')}</div>
                 <div class="product-card-footer">
                     <div class="product-card-price">$${Number(p.precio || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
-                    <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.75rem;" onclick='agregarAlCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
-                        🛒 Agregar
-                    </button>
+                    ${botonAgregarHtml}
                 </div>
             </div>
         </div>
@@ -279,18 +286,22 @@ function agregarAlCarrito(producto) {
     const idProd = producto.idProducto || producto.id;
     const existente = carrito.find(item => (item.idProducto || item.id) === idProd);
     
+    const stockDisponible = producto.stock !== undefined ? producto.stock : 999;
+
     if (existente) {
-        if (existente.cantidad < producto.stock) {
+        if (existente.cantidad < stockDisponible) {
             existente.cantidad++;
+            mostrarToast(`Se agregó otra unidad de "${producto.nombre}" al carrito.`, 'success');
         } else {
-            alert('No hay suficiente stock disponible.');
+            mostrarToast(`Stock máximo alcanzado (${stockDisponible} unidades disponibles).`, 'error');
             return;
         }
     } else {
-        if (producto.stock > 0) {
+        if (stockDisponible > 0) {
             carrito.push({ ...producto, cantidad: 1 });
+            mostrarToast(`"${producto.nombre}" añadido al carrito.`, 'success');
         } else {
-            alert('Producto sin stock.');
+            mostrarToast(`Lo sentimos, "${producto.nombre}" está agotado.`, 'error');
             return;
         }
     }
@@ -305,15 +316,18 @@ function agregarAlCarrito(producto) {
 function cambiarCantidad(idProducto, delta) {
     const index = carrito.findIndex(item => (item.idProducto || item.id) === idProducto);
     if (index !== -1) {
-        carrito[index].cantidad += delta;
-        if (carrito[index].cantidad <= 0) {
+        const item = carrito[index];
+        const stockDispo = item.stock !== undefined ? item.stock : 999;
+
+        const nuevaCantidad = item.cantidad + delta;
+        if (nuevaCantidad <= 0) {
             carrito.splice(index, 1);
+            mostrarToast(`Producto eliminado del carrito.`, 'info');
+        } else if (nuevaCantidad > stockDispo) {
+            mostrarToast(`Stock insuficiente. Solo hay ${stockDispo} unidades disponibles.`, 'error');
+            item.cantidad = stockDispo;
         } else {
-            const item = carrito[index];
-            if (item.cantidad > item.stock) {
-                item.cantidad = item.stock;
-                alert('Ha alcanzado el límite de stock disponible.');
-            }
+            item.cantidad = nuevaCantidad;
         }
         guardarCarrito();
     }
@@ -485,6 +499,12 @@ function actualizarUIAuth() {
                     ⚙️ Panel Admin
                 </button>
             `;
+        } else {
+            html += `
+                <button class="btn btn-primary" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border-color: rgba(56,189,248,0.3);" onclick="abrirModalMisCompras()">
+                    📦 Mis Compras
+                </button>
+            `;
         }
         container.innerHTML = html;
     }
@@ -544,7 +564,7 @@ async function ejecutarLogin(event) {
 
         toggleLoginModal(false);
         actualizarUIAuth();
-        alert(`¡Bienvenido de nuevo, ${data.email} (${data.rol})!`);
+        mostrarToast(`¡Bienvenido de nuevo, ${data.email}!`, 'success');
     } catch (err) {
         console.error(err);
         errorMsg.textContent = err.message || 'Error al iniciar sesión.';
@@ -577,6 +597,132 @@ async function cerrarSesion() {
 
 function irPanelAdmin() {
     toggleAdminModal(true);
+}
+
+// --- Historial de Compras del Cliente ---
+function toggleMisComprasModal(abrir) {
+    const modal = document.getElementById('misComprasModal');
+    if (modal) {
+        modal.style.display = abrir ? 'flex' : 'none';
+    }
+}
+
+async function abrirModalMisCompras() {
+    toggleMisComprasModal(true);
+    const container = document.getElementById('misComprasContainer');
+    const token = localStorage.getItem('sintaxis_token');
+
+    if (!token) {
+        mostrarToast('Debes iniciar sesión para ver tu historial de compras.', 'error');
+        toggleLoginModal(true);
+        return;
+    }
+
+    container.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Cargando tus compras...</div>`;
+
+    try {
+        const response = await fetch('/api/ventas/mis-ventas', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('No se pudo cargar el historial de compras.');
+        }
+
+        const ventas = await response.json();
+
+        if (!ventas || ventas.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🛍️</div>
+                    <div style="font-size: 1rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Aún no tienes compras realizadas</div>
+                    <p style="font-size: 0.85rem; margin-bottom: 1.5rem;">Explora nuestros celulares y accesorios para realizar tu primer pedido.</p>
+                    <button class="btn btn-primary" onclick="toggleMisComprasModal(false)">Ir a Ver Catálogo</button>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `<div style="display: flex; flex-direction: column; gap: 1rem;">`;
+        ventas.forEach(v => {
+            const fechaFormateada = v.fecha ? new Date(v.fecha).toLocaleString() : 'Fecha no disponible';
+            const estadoColor = v.estado === 'Pagada' ? 'color: var(--success-emerald); background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3);' :
+                                v.estado === 'Pendiente' ? 'color: #f59e0b; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3);' :
+                                v.estado === 'Entregada' ? 'color: var(--accent-cyan); background: rgba(56,189,248,0.1); border-color: rgba(56,189,248,0.3);' :
+                                'color: var(--danger-rose); background: rgba(244,63,94,0.1); border-color: rgba(244,63,94,0.3);';
+
+            let detallesHtml = '';
+            if (v.detalles && v.detalles.length > 0) {
+                detallesHtml = `
+                    <div style="margin-top: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                        <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.5rem;">Productos en esta orden:</div>
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                `;
+                v.detalles.forEach(d => {
+                    const subtotalItem = (d.subtotalDetalle !== undefined && d.subtotalDetalle !== null) ? d.subtotalDetalle : (d.cantidad * (d.precioUnitario || 0));
+                    detallesHtml += `
+                        <div style="display: flex; justify-content: space-between; font-size: 0.825rem; background: var(--bg-canvas); padding: 0.4rem 0.75rem; border-radius: var(--radius); border: 1px solid var(--border-color);">
+                            <span><strong>${d.cantidad}x</strong> ${d.nombreProducto || 'Producto #' + d.idProducto}</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">$${subtotalItem.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+                detallesHtml += `</div></div>`;
+            }
+
+            html += `
+                <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow-kyu);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+                        <div>
+                            <div style="font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; color: var(--text-secondary);">PEDIDO #${v.idVenta}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">📅 ${fechaFormateada}</div>
+                            <div style="font-size: 0.85rem; margin-top: 0.3rem;">💳 Método: <strong>${v.metodoPago || 'Efectivo'}</strong></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem;">
+                            <span style="font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid; font-weight: 600; ${estadoColor}">${v.estado}</span>
+                            <div style="font-size: 1.1rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">$${v.total.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    ${detallesHtml}
+                </div>
+            `;
+        });
+        html += `</div>`;
+        container.innerHTML = html;
+
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `<div style="text-align: center; color: var(--danger-rose); padding: 2rem;">Error al cargar tus compras: ${err.message}</div>`;
+    }
+}
+
+function mostrarToast(mensaje, tipo = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${tipo}`;
+
+    let icono = '✨';
+    if (tipo === 'success') icono = '✅';
+    if (tipo === 'error') icono = '❌';
+    if (tipo === 'info') icono = 'ℹ️';
+
+    toast.innerHTML = `
+        <span style="font-size: 1.1rem; flex-shrink: 0;">${icono}</span>
+        <div style="flex: 1; font-weight: 500;">${mensaje}</div>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+            toast.remove();
+        }, 250);
+    }, 3500);
 }
 
 // --- Registro Público & Gestión de Usuarios ---
@@ -1804,7 +1950,7 @@ async function ejecutarAgregarStock(event) {
             throw new Error(errJson.message || `Error al actualizar el stock. Status: ${res.status}`);
         }
 
-        alert(`¡Stock actualizado con éxito! Se agregaron ${cantidadAgregar} unidades. Stock total: ${nuevoStock}`);
+        mostrarToast(`¡Stock actualizado con éxito! Se agregaron ${cantidadAgregar} unidades. Stock total: ${nuevoStock}`, 'success');
         toggleStockModal(false);
         await cargarProductos();
         cargarProductosAdmin();
@@ -1814,7 +1960,7 @@ async function ejecutarAgregarStock(event) {
             errorMsg.textContent = err.message || 'Error al actualizar el stock.';
             errorMsg.style.display = 'block';
         } else {
-            alert(err.message || 'Error al actualizar el stock.');
+            mostrarToast(err.message || 'Error al actualizar el stock.', 'error');
         }
     }
 }

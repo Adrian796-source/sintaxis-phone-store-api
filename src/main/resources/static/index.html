@@ -595,6 +595,9 @@
     <script src="modal_pago.js" defer></script>
     <script src="app.js" defer></script>
 
+    <!-- Contenedor de Notificaciones Toast (Kyū Dark Mode) -->
+    <div id="toastContainer" style="position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.75rem; pointer-events: none;"></div>
+
     <!-- Modal Editar Cliente Admin -->
     <div id="clienteFormModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 10, 15, 0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(6px); padding: 1.5rem;">
         <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); width: 100%; max-width: 520px; box-shadow: var(--shadow-kyu); overflow: hidden;">
@@ -635,6 +638,24 @@
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Mis Compras (Historial del Cliente) -->
+    <div id="misComprasModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 10, 15, 0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(6px); padding: 1.5rem;">
+        <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius); width: 100%; max-width: 850px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: var(--shadow-kyu); overflow: hidden;">
+            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0E1017;">
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                    📦 Historial de Mis Compras
+                </h3>
+                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="toggleMisComprasModal(false)">✕</button>
+            </div>
+            <div style="flex: 1; overflow-y: auto; padding: 1.5rem;" id="misComprasContainer">
+                <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Cargando tus compras...</div>
+            </div>
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: #0E1017; display: flex; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="toggleMisComprasModal(false)">Cerrar</button>
+            </div>
         </div>
     </div>
 </html>
