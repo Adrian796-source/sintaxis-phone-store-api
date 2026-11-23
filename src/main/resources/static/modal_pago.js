@@ -131,7 +131,7 @@ function mostrarModalRegistroInvitado(ventaCreada) {
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Contraseña</label>
-                    <input type="password" id="invitadoPassword" required minlength="6" placeholder="Mínimo 6 caracteres" style="width: 100%; padding: 0.75rem; background: var(--bg-canvas); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-main); font-size: 0.875rem;" />
+                    <input type="password" id="invitadoPassword" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres" style="width: 100%; padding: 0.75rem; background: var(--bg-canvas); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-main); font-size: 0.875rem;" />
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Teléfono</label>

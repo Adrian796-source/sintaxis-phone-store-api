@@ -104,15 +104,18 @@ function filtrarProductos() {
         fuente = accesoriosGlobal;
         if (subcategoriaActiva !== 'Todas') {
             fuente = fuente.filter(p => {
-                const sub = p.subcategoria ? p.subcategoria.trim().toLowerCase() : '';
+                const sub = p.subcategoriaNombre || p.subcategoria || '';
+                const subStr = typeof sub === 'string' ? sub : (sub.nombre || '');
+                const subNorm = subStr.trim().toLowerCase();
                 const buscada = subcategoriaActiva.trim().toLowerCase();
-                return sub === buscada || (sub && sub.includes(buscada));
+                return subNorm === buscada || (subNorm && subNorm.includes(buscada));
             });
         }
     }
 
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
     const estadoFiltro = document.getElementById('filterEstado').value;
+    const sortFiltro = document.getElementById('filterSort') ? document.getElementById('filterSort').value : 'default';
 
     const filtrados = fuente.filter(p => {
         const matchQuery = !query || 
@@ -130,6 +133,17 @@ function filtrarProductos() {
 
         return matchQuery && matchEstado;
     });
+
+    // Aplicar Ordenamiento (Sorting)
+    if (sortFiltro === 'precio-asc') {
+        filtrados.sort((a, b) => (a.precio || 0) - (b.precio || 0));
+    } else if (sortFiltro === 'precio-desc') {
+        filtrados.sort((a, b) => (b.precio || 0) - (a.precio || 0));
+    } else if (sortFiltro === 'nombre-az') {
+        filtrados.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+    } else if (sortFiltro === 'stock-desc') {
+        filtrados.sort((a, b) => (b.stock || 0) - (a.stock || 0));
+    }
 
     renderizarProductos(filtrados);
 }
@@ -176,9 +190,13 @@ function renderizarProductos(productos) {
         // Agrupar accesorios por subcategoría
         const grupos = {};
         accesoriosList.forEach(acc => {
-            const sub = acc.subcategoriaNombre || acc.subcategoria || 'General';
-            if (!grupos[sub]) grupos[sub] = [];
-            grupos[sub].push(acc);
+            let sub = acc.subcategoriaNombre || acc.subcategoria || 'General';
+            if (typeof sub === 'object' && sub !== null) {
+                sub = sub.nombre || 'General';
+            }
+            const subStr = String(sub).trim() || 'General';
+            if (!grupos[subStr]) grupos[subStr] = [];
+            grupos[subStr].push(acc);
         });
 
         let htmlGrupos = '';
@@ -228,7 +246,7 @@ function crearTarjetaProducto(p) {
         : `<button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.75rem;" onclick='agregarAlCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'>🛒 Agregar</button>`;
 
     return `
-        <div class="product-card" ${esAgotado ? 'style="opacity: 0.85;"' : ''}>
+        <div class="product-card" ${esAgotado ? 'style="opacity: 0.85; cursor: pointer;"' : 'style="cursor: pointer;"'} onclick='abrirModalDetalleProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
             <div class="product-card-img-container">
                 <div class="product-card-badge">${badgeHtml}</div>
                 <img src="${imagenDefault}" alt="${escapeHtml(p.nombre)}" class="product-card-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';">
@@ -239,7 +257,9 @@ function crearTarjetaProducto(p) {
                 <div class="product-card-desc" title="${escapeHtml(p.descripcion || '')}">${escapeHtml(p.descripcion || 'Sin descripción disponible.')}</div>
                 <div class="product-card-footer">
                     <div class="product-card-price">$${Number(p.precio || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
-                    ${botonAgregarHtml}
+                    <div onclick="event.stopPropagation()">
+                        ${botonAgregarHtml}
+                    </div>
                 </div>
             </div>
         </div>
@@ -492,17 +512,14 @@ function actualizarUIAuth() {
             <button class="btn btn-secondary" style="color: var(--danger-rose); border-color: rgba(244,63,94,0.3);" onclick="cerrarSesion()">
                 🚪 Cerrar Sesión
             </button>
+            <button class="btn btn-primary" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border-color: rgba(56,189,248,0.3);" onclick="abrirModalMiPerfil()">
+                👤 Mi Perfil
+            </button>
         `;
         if (rol === 'ROLE_ADMIN' || rol === 'ROLE_EMPLEADO') {
             html += `
                 <button class="btn btn-primary" style="background: rgba(16, 185, 129, 0.15); color: var(--success-emerald); border-color: rgba(16, 185, 129, 0.3);" onclick="irPanelAdmin()">
                     ⚙️ Panel Admin
-                </button>
-            `;
-        } else {
-            html += `
-                <button class="btn btn-primary" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border-color: rgba(56,189,248,0.3);" onclick="abrirModalMisCompras()">
-                    📦 Mis Compras
                 </button>
             `;
         }
@@ -564,6 +581,7 @@ async function ejecutarLogin(event) {
 
         toggleLoginModal(false);
         actualizarUIAuth();
+        iniciarTemporizadorInactividad();
         mostrarToast(`¡Bienvenido de nuevo, ${data.email}!`, 'success');
     } catch (err) {
         console.error(err);
@@ -590,6 +608,7 @@ async function cerrarSesion() {
         localStorage.removeItem('sintaxis_rol');
         localStorage.removeItem('sintaxis_email');
         localStorage.removeItem('sintaxis_idCliente');
+        detenerTemporizadorInactividad();
         actualizarUIAuth();
         alert('Sesión cerrada correctamente.');
     }
@@ -597,6 +616,196 @@ async function cerrarSesion() {
 
 function irPanelAdmin() {
     toggleAdminModal(true);
+}
+
+// --- Gestión de Perfil de Cliente y Cambio de Contraseña ---
+function toggleMiPerfilModal(abrir) {
+    const modal = document.getElementById('miPerfilModal');
+    if (modal) {
+        modal.style.display = abrir ? 'flex' : 'none';
+    }
+}
+
+async function abrirModalMiPerfil() {
+    toggleMiPerfilModal(true);
+    const container = document.getElementById('miPerfilContainer');
+    const token = localStorage.getItem('sintaxis_token');
+    const rol = localStorage.getItem('sintaxis_rol');
+
+    if (!token) {
+        mostrarToast('Debes iniciar sesión para ver tu perfil.', 'error');
+        toggleLoginModal(true);
+        return;
+    }
+
+    container.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Cargando perfil e historial...</div>`;
+
+    try {
+        let data = {};
+        let esAdminOEmpleado = rol === 'ROLE_ADMIN' || rol === 'ROLE_EMPLEADO';
+
+        if (esAdminOEmpleado) {
+            const respPerfil = await fetch('/api/auth/perfil', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!respPerfil.ok) throw new Error('No se pudo cargar el perfil de usuario.');
+            const userPerfil = await respPerfil.json();
+            
+            data = {
+                nombre: userPerfil.nombre || 'Administrador',
+                apellido: '',
+                email: userPerfil.email,
+                telefono: userPerfil.telefono || 'No requerido',
+                direccion: userPerfil.direccion || 'No requerida',
+                esVip: false,
+                puntosAcumulados: 0,
+                historialCompras: []
+            };
+        } else {
+            const response = await fetch('/api/clientes/mi-perfil', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!response.ok) throw new Error('No se pudo cargar la información del perfil.');
+            data = await response.json();
+        }
+        
+        let historialHtml = '';
+        if (!data.historialCompras || data.historialCompras.length === 0) {
+            historialHtml = `<div style="text-align: center; color: var(--text-secondary); padding: 1.5rem; font-size: 0.85rem;">No tienes compras registradas todavía.</div>`;
+        } else {
+            historialHtml = `<div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">`;
+            data.historialCompras.forEach(v => {
+                const fechaF = v.fecha ? new Date(v.fecha).toLocaleString() : 'Fecha no disp.';
+                const estadoCol = v.estado === 'Pagada' ? 'color: var(--success-emerald); background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3);' :
+                                  v.estado === 'Pendiente' ? 'color: #f59e0b; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3);' :
+                                  'color: var(--danger-rose); background: rgba(244,63,94,0.1); border-color: rgba(244,63,94,0.3);';
+                historialHtml += `
+                    <div style="background: var(--bg-canvas); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <div>
+                            <div style="font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; color: var(--text-secondary);">PEDIDO #${v.idVenta} — ${fechaF}</div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-top: 0.1rem;">💳 ${v.metodoPago || 'Efectivo'}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid; font-weight: 600; ${estadoCol}">${v.estado}</span>
+                            <span style="font-size: 0.95rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">$${v.total.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            historialHtml += `</div>`;
+        }
+
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Tarjeta de Datos y Puntos -->
+                <div style="background: var(--bg-canvas); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
+                            📋 Datos Personales & Fidelización
+                        </h4>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            ${!esAdminOEmpleado ? `
+                                <span style="font-size: 0.75rem; background: rgba(56,189,248,0.15); color: var(--accent-cyan); border: 1px solid rgba(56,189,248,0.3); padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 600;">
+                                    🌟 Puntos: ${data.puntosAcumulados || 0}
+                                </span>
+                                <span style="font-size: 0.75rem; background: ${data.es_vip || data.esVip ? 'rgba(16,185,129,0.2)' : 'rgba(100,116,139,0.2)'}; color: ${data.es_vip || data.esVip ? 'var(--success-emerald)' : 'var(--text-secondary)'}; border: 1px solid ${data.es_vip || data.esVip ? 'rgba(16,185,129,0.4)' : 'rgba(100,116,139,0.3)'}; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 600;">
+                                    ${data.es_vip || data.esVip ? '👑 VIP MEMBER' : '👤 Cliente Standard'}
+                                </span>
+                            ` : `
+                                <span style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: var(--success-emerald); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 600;">
+                                    🛡️ Rol: ${rol.replace('ROLE_', '')}
+                                </span>
+                            `}
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-size: 0.85rem;">
+                        <div><span style="color: var(--text-secondary);">Nombre:</span> <strong style="color: var(--text-main);">${data.nombre || ''} ${data.apellido || ''}</strong></div>
+                        <div><span style="color: var(--text-secondary);">Email:</span> <strong style="color: var(--text-main);">${data.email || ''}</strong></div>
+                        ${!esAdminOEmpleado ? `
+                            <div><span style="color: var(--text-secondary);">Teléfono:</span> <strong style="color: var(--text-main);">${data.telefono || 'No registrado'}</strong></div>
+                            <div><span style="color: var(--text-secondary);">Dirección:</span> <strong style="color: var(--text-main);">${data.direccion || 'No registrada'}</strong></div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Historial de Compras (Solo para Clientes) -->
+                ${!esAdminOEmpleado ? `
+                    <div>
+                        <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                            🛍️ Historial de Compras (${data.historialCompras ? data.historialCompras.length : 0})
+                        </h4>
+                        ${historialHtml}
+                    </div>
+                ` : ''}
+
+                <!-- Sección Cambio de Contraseña -->
+                <div style="background: var(--bg-canvas); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.25rem;">
+                    <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                        🔐 Seguridad & Cambio de Contraseña
+                    </h4>
+                    <form id="cambiarPasswordForm" onsubmit="ejecutarCambiarPassword(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Contraseña Actual *</label>
+                                <input type="password" id="passActual" required autocomplete="current-password" placeholder="••••••••" style="width: 100%; background: var(--surface); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.5rem; border-radius: var(--radius); font-size: 0.85rem;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.3rem;">Nueva Contraseña *</label>
+                                <input type="password" id="passNueva" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres" style="width: 100%; background: var(--surface); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.5rem; border-radius: var(--radius); font-size: 0.85rem;">
+                            </div>
+                        </div>
+                        <div id="passErrorMsg" style="color: var(--danger-rose); font-size: 0.8rem; display: none;"></div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 0.25rem;">
+                            <button type="submit" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.4rem 1rem;">Actualizar Contraseña</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `<div style="text-align: center; color: var(--danger-rose); padding: 2rem;">Error al cargar tu perfil: ${err.message}</div>`;
+    }
+}
+
+async function ejecutarCambiarPassword(event) {
+    event.preventDefault();
+    const passwordActual = document.getElementById('passActual').value;
+    const passwordNueva = document.getElementById('passNueva').value;
+    const errorMsg = document.getElementById('passErrorMsg');
+    const token = localStorage.getItem('sintaxis_token');
+
+    errorMsg.style.display = 'none';
+
+    if (passwordNueva.length < 6) {
+        errorMsg.textContent = 'La nueva contraseña debe tener al menos 6 caracteres.';
+        errorMsg.style.display = 'block';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/auth/cambiar-password', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ passwordActual, passwordNueva })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.message || 'La contraseña actual es incorrecta o el formato es inválido.');
+        }
+
+        mostrarToast('¡Contraseña actualizada con éxito!', 'success');
+        document.getElementById('cambiarPasswordForm').reset();
+    } catch (err) {
+        console.error(err);
+        errorMsg.textContent = err.message || 'Error al cambiar la contraseña.';
+        errorMsg.style.display = 'block';
+    }
 }
 
 // --- Historial de Compras del Cliente ---
@@ -1965,7 +2174,141 @@ async function ejecutarAgregarStock(event) {
     }
 }
 
-// Inicializar contador y renderizado de carrito al cargar
+// --- Funcionalidad de Recuperación de Contraseña ---
+function toggleForgotPasswordModal(abrir) {
+    const modal = document.getElementById('forgotPasswordModal');
+    if (!modal) return;
+    modal.style.display = abrir ? 'flex' : 'none';
+    
+    // Si se abre, resetear formularios y mensajes
+    if (abrir) {
+        const forgotForm = document.getElementById('forgotForm');
+        const resetForm = document.getElementById('resetForm');
+        if (forgotForm) forgotForm.reset();
+        if (resetForm) resetForm.reset();
+        
+        const forgotErr = document.getElementById('forgotErrorMsg');
+        const forgotSucc = document.getElementById('forgotSuccessMsg');
+        const resetErr = document.getElementById('resetErrorMsg');
+        const resetSucc = document.getElementById('resetSuccessMsg');
+        
+        if (forgotErr) forgotErr.style.display = 'none';
+        if (forgotSucc) forgotSucc.style.display = 'none';
+        if (resetErr) resetErr.style.display = 'none';
+        if (resetSucc) resetSucc.style.display = 'none';
+        
+        // Mostrar paso 1 por defecto
+        if (forgotForm) forgotForm.style.display = 'flex';
+        if (resetForm) resetForm.style.display = 'none';
+    }
+}
+
+function abrirModalForgotPassword() {
+    toggleLoginModal(false);
+    toggleForgotPasswordModal(true);
+}
+
+function alternarModalResetPasswordDirecto() {
+    const forgotForm = document.getElementById('forgotForm');
+    const resetForm = document.getElementById('resetForm');
+    if (!forgotForm || !resetForm) return;
+
+    if (forgotForm.style.display === 'none') {
+        forgotForm.style.display = 'flex';
+        resetForm.style.display = 'none';
+    } else {
+        forgotForm.style.display = 'none';
+        resetForm.style.display = 'flex';
+    }
+}
+
+async function ejecutarSolicitudForgotPassword(event) {
+    event.preventDefault();
+    const email = document.getElementById('forgotEmail').value.trim();
+    const errorMsg = document.getElementById('forgotErrorMsg');
+    const successMsg = document.getElementById('forgotSuccessMsg');
+    
+    if (errorMsg) errorMsg.style.display = 'none';
+    if (successMsg) successMsg.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        // El endpoint devuelve 204 No Content incluso si no existe por seguridad,
+        // pero informamos al usuario exitosamente
+        if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.message || 'Error al solicitar la recuperación de contraseña.');
+        }
+
+        if (successMsg) {
+            successMsg.textContent = '¡Código enviado! Revisa los logs de la consola para ver tu código de 6 dígitos.';
+            successMsg.style.display = 'block';
+        }
+
+        // Cambiar automáticamente al formulario de reset para comodidad de prueba
+        setTimeout(() => {
+            const tokenInput = document.getElementById('resetTokenInput');
+            if (tokenInput) tokenInput.focus();
+            alternarModalResetPasswordDirecto();
+        }, 2000);
+
+    } catch (err) {
+        console.error(err);
+        if (errorMsg) {
+            errorMsg.textContent = err.message || 'Error de conexión.';
+            errorMsg.style.display = 'block';
+        }
+    }
+}
+
+async function ejecutarResetPassword(event) {
+    event.preventDefault();
+    const token = document.getElementById('resetTokenInput').value.trim();
+    const passwordNueva = document.getElementById('resetPasswordNueva').value;
+    const errorMsg = document.getElementById('resetErrorMsg');
+    const successMsg = document.getElementById('resetSuccessMsg');
+
+    if (errorMsg) errorMsg.style.display = 'none';
+    if (successMsg) successMsg.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, passwordNueva })
+        });
+
+        if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.message || 'Token inválido o expirado.');
+        }
+
+        if (successMsg) {
+            successMsg.textContent = '¡Contraseña restablecida con éxito! Ya puedes iniciar sesión.';
+            successMsg.style.display = 'block';
+        }
+
+        mostrarToast('¡Contraseña actualizada con éxito!', 'success');
+
+        setTimeout(() => {
+            toggleForgotPasswordModal(false);
+            toggleLoginModal(true);
+        }, 1800);
+
+    } catch (err) {
+        console.error(err);
+        if (errorMsg) {
+            errorMsg.textContent = err.message || 'Error al restablecer la contraseña.';
+            errorMsg.style.display = 'block';
+        }
+    }
+}
+
 actualizarContadorCarrito();
 renderizarCarrito();
 
@@ -1973,3 +2316,226 @@ renderizarCarrito();
 actualizarUIAuth();
 cargarProductos();
 cargarSubcategorias();
+
+// ==================== GESTIÓN DE INACTIVIDAD (IDLE TIMEOUT - 5 MINUTOS) ====================
+let inactivityTimer = null;
+let countdownInterval = null;
+let remainingSeconds = 30;
+const IDLE_TIME_MS = 4 * 60 * 1000 + 30 * 1000; // 4 minutos 30 segundos antes de mostrar advertencia
+const COUNTDOWN_TIME_S = 30; // 30 segundos de cuenta regresiva en el modal
+
+function iniciarTemporizadorInactividad() {
+    if (!localStorage.getItem('sintaxis_token')) {
+        detenerTemporizadorInactividad();
+        return;
+    }
+    reiniciarTemporizadorInactividad();
+
+    const eventos = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart', 'input'];
+    eventos.forEach(evento => {
+        window.removeEventListener(evento, registrarActividadUsuario);
+        window.addEventListener(evento, registrarActividadUsuario, { passive: true });
+    });
+}
+
+function registrarActividadUsuario() {
+    const modal = document.getElementById('inactivityModal');
+    if (modal && modal.style.display === 'flex') {
+        return;
+    }
+    reiniciarTemporizadorInactividad();
+}
+
+function reiniciarTemporizadorInactividad() {
+    if (!localStorage.getItem('sintaxis_token')) return;
+
+    clearTimeout(inactivityTimer);
+    clearInterval(countdownInterval);
+
+    const modal = document.getElementById('inactivityModal');
+    if (modal) modal.style.display = 'none';
+
+    inactivityTimer = setTimeout(() => {
+        mostrarModalInactividad();
+    }, IDLE_TIME_MS);
+}
+
+function mostrarModalInactividad() {
+    if (!localStorage.getItem('sintaxis_token')) return;
+
+    const modal = document.getElementById('inactivityModal');
+    const countdownEl = document.getElementById('inactivityCountdown');
+    if (!modal) return;
+
+    remainingSeconds = COUNTDOWN_TIME_S;
+    if (countdownEl) countdownEl.textContent = remainingSeconds;
+    modal.style.display = 'flex';
+
+    clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+        remainingSeconds--;
+        if (countdownEl) countdownEl.textContent = remainingSeconds;
+
+        if (remainingSeconds <= 0) {
+            clearInterval(countdownInterval);
+            cerrarSesionPorInactividad();
+        }
+    }, 1000);
+}
+
+function resetInactivityTimer() {
+    const modal = document.getElementById('inactivityModal');
+    if (modal) modal.style.display = 'none';
+    clearInterval(countdownInterval);
+    reiniciarTemporizadorInactividad();
+    mostrarToast('Sesión extendida por actividad.', 'info');
+}
+
+function cerrarSesionPorInactividad() {
+    clearTimeout(inactivityTimer);
+    clearInterval(countdownInterval);
+
+    const modal = document.getElementById('inactivityModal');
+    if (modal) modal.style.display = 'none';
+
+    localStorage.removeItem('sintaxis_token');
+    localStorage.removeItem('sintaxis_rol');
+    localStorage.removeItem('sintaxis_email');
+    localStorage.removeItem('sintaxis_idCliente');
+    
+    actualizarUIAuth();
+    
+    const adminModal = document.getElementById('adminModal');
+    if (adminModal) adminModal.style.display = 'none';
+    const perfilModal = document.getElementById('miPerfilModal');
+    if (perfilModal) perfilModal.style.display = 'none';
+
+    mostrarToast('⚠️ Sesión cerrada automáticamente por 5 minutos de inactividad.', 'error');
+}
+
+function detenerTemporizadorInactividad() {
+    clearTimeout(inactivityTimer);
+    clearInterval(countdownInterval);
+    const modal = document.getElementById('inactivityModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Si ya hay una sesión activa al cargar la página, iniciamos el control de inactividad
+if (localStorage.getItem('sintaxis_token')) {
+    iniciarTemporizadorInactividad();
+}
+// --- Punto 2: Detalle Rápido / Vista Modal del Producto ---
+function abrirModalDetalleProducto(p) {
+    const modal = document.getElementById('productDetailModal');
+    const content = document.getElementById('detailModalContent');
+    const titleEl = document.getElementById('detailModalTitle');
+    if (!modal || !content) return;
+
+    titleEl.innerHTML = `🔍 Detalle Rápido: ${escapeHtml(p.nombre)}`;
+
+    const stockActual = p.stock !== undefined ? p.stock : 0;
+    const esAgotado = stockActual <= 0;
+    const esStockBajo = !esAgotado && (stockActual <= p.stockMinimo);
+
+    const imagenDefault = p.imagenUrl && p.imagenUrl.trim() !== '' 
+        ? (p.imagenUrl.startsWith('http://localhost:8080/api/productos/') 
+            ? p.imagenUrl.replace('/api/productos/', '/api/imagenes/') 
+            : p.imagenUrl)
+        : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80';
+
+    let badgeHtml = '';
+    if (p._tipo === 'celular') {
+        badgeHtml = `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border-color: rgba(56,189,248,0.3);">Celular</span>`;
+    } else {
+        const sub = p.subcategoriaNombre || p.subcategoria || 'Accesorio';
+        badgeHtml = `<span class="badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border-color: rgba(236,72,153,0.3);">${escapeHtml(sub)}</span>`;
+    }
+
+    if (esAgotado) {
+        badgeHtml += ` <span class="badge" style="background: rgba(244, 63, 94, 0.2); color: var(--danger-rose); border-color: rgba(244, 63, 94, 0.4); font-weight: 700;">AGOTADO</span>`;
+    } else if (esStockBajo) {
+        badgeHtml += ` <span class="badge badge-warning" style="margin-left: 0.25rem;">Stock Bajo (${stockActual} disp.)</span>`;
+    } else {
+        badgeHtml += ` <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success-emerald); border-color: rgba(16,185,129,0.3); margin-left: 0.25rem;">Stock Disponible (${stockActual})</span>`;
+    }
+
+    // Construir tabla de especificaciones técnicas según sea celular o accesorio
+    let specsHtml = '';
+    if (p._tipo === 'celular') {
+        specsHtml = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1rem; background: var(--bg-canvas); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border-color); font-size: 0.85rem;">
+                <div>📱 <strong>Modelo:</strong> ${escapeHtml(p.modelo || 'N/D')}</div>
+                <div>🏷️ <strong>Marca:</strong> ${escapeHtml(p.marca || 'N/D')}</div>
+                <div>⚙️ <strong>OS:</strong> ${escapeHtml(p.sistemaOperativo || 'Android / iOS')}</div>
+                <div>💾 <strong>Almacenamiento:</strong> ${p.almacenamientoGB ? p.almacenamientoGB + ' GB' : 'N/D'}</div>
+                <div>⚡ <strong>Memoria RAM:</strong> ${p.ramGB ? p.ramGB + ' GB' : 'N/D'}</div>
+                <div>🧠 <strong>Procesador:</strong> ${escapeHtml(p.procesador || 'N/D')}</div>
+                <div>📺 <strong>Pantalla:</strong> ${p.pantallaPulgadas ? p.pantallaPulgadas + '"' : 'N/D'}</div>
+                <div>🔋 <strong>Batería:</strong> ${p.bateriaMAh ? p.bateriaMAh + ' mAh' : 'N/D'}</div>
+                <div>🎨 <strong>Color:</strong> ${escapeHtml(p.color || 'Estándar')}</div>
+                <div>🔓 <strong>Libre:</strong> ${p.esLibre !== false ? 'Sí (Liberado)' : 'No'}</div>
+            </div>
+        `;
+    } else {
+        const sub = p.subcategoriaNombre || p.subcategoria || 'Accesorio';
+        specsHtml = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1rem; background: var(--bg-canvas); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border-color); font-size: 0.85rem;">
+                <div>📁 <strong>Subcategoría:</strong> ${escapeHtml(sub)}</div>
+                <div>🏷️ <strong>Marca:</strong> ${escapeHtml(p.marca || 'Genérica')}</div>
+                <div>🎨 <strong>Color:</strong> ${escapeHtml(p.color || 'Universal')}</div>
+                <div>✨ <strong>Original:</strong> ${p.esOriginal !== false ? 'Sí (Original)' : 'Genérico'}</div>
+                <div style="grid-column: 1 / -1;">🔗 <strong>Compatibilidad:</strong> ${escapeHtml(Array.isArray(p.marcasCompatibles) ? p.marcasCompatibles.join(', ') : (p.marcasCompatibles || 'Universal para Smartphones'))}</div>
+            </div>
+        `;
+    }
+
+    content.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+            <div style="width: 100%; max-height: 340px; border-radius: var(--radius); overflow: hidden; background: var(--bg-canvas); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+                <img src="${imagenDefault}" alt="${escapeHtml(p.nombre)}" style="max-height: 300px; max-width: 100%; object-fit: contain;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80';">
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); text-align: center;">ID Producto: #${p.idProducto || p.id}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+                <div style="margin-bottom: 0.5rem;">${badgeHtml}</div>
+                <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text-main); line-height: 1.3; margin-bottom: 0.5rem;">${escapeHtml(p.nombre)}</h2>
+                <div style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">${escapeHtml(p.descripcion || 'Sin descripción detallada disponible.')}</div>
+            </div>
+
+            ${specsHtml}
+
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; background: #0E1017; padding: 0.5rem 0.75rem; border-radius: var(--radius); border: 1px solid var(--border-color);">
+                <div style="min-width: 0; margin-right: 0.5rem;">
+                    <div style="font-size: 0.55rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Precio Final</div>
+                    <div style="font-size: 1rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan);">$${Number(p.precio || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    ${esAgotado 
+                        ? `<button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.65rem; opacity: 0.5; cursor: not-allowed; white-space: nowrap; line-height: 1.1;" disabled>🚫 Agotado</button>`
+                        : `<button class="btn btn-primary" style="padding: 0.3rem 0.5rem; font-size: 0.65rem; white-space: nowrap; line-height: 1.1;" onclick='agregarAlCarritoDesdeDetalle(${JSON.stringify(p).replace(/'/g, "&#39;")})'>🛒 Agregar al Carrito</button>`
+                    }
+                </div>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+}
+
+function cerrarModalDetalleProducto() {
+    const modal = document.getElementById('productDetailModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function agregarAlCarritoDesdeDetalle(p) {
+    agregarAlCarrito(p);
+    cerrarModalDetalleProducto();
+}
+
+// Cerrar modal al presionar ESC o hacer clic fuera del contenido
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        cerrarModalDetalleProducto();
+    }
+});

@@ -108,7 +108,7 @@ public class SecurityConfig {
                                 "/v3/api-docs.yaml", "/webjars/**", "/swagger-resources", "/swagger-resources/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/subcategorias/**").permitAll()
                         // Endpoints públicos de Auth e Imágenes
-                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/imagenes/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/imagenes/**").permitAll()
                         .requestMatchers("/api/auth/perfil").authenticated()
                         .requestMatchers("/api/auth/usuarios").hasAuthority(ROLE_ADMIN)
 
@@ -124,7 +124,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, ACCESORIOS_PATH).hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
                         .requestMatchers(HttpMethod.DELETE, ACCESORIOS_PATH).hasAnyAuthority(ROLE_ADMIN, ROLE_EMPLEADO)
 
-                        // Clientes - solo ADMIN
+                        // Clientes - acceso a mi-perfil para CLIENTE y resto para ADMIN
+                        .requestMatchers("/api/clientes/mi-perfil").hasAnyAuthority(ROLE_CLIENTE, ROLE_ADMIN, ROLE_EMPLEADO)
                         .requestMatchers("/api/clientes/**").hasAuthority(ROLE_ADMIN)
 
                         // Ventas - ADMIN y EMPLEADO, mis-ventas y creación público (para invitados) o autenticado

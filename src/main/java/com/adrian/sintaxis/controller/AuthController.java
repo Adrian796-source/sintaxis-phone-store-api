@@ -65,6 +65,20 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Solicitar recuperación de contraseña", description = "Genera un token temporal de recuperación enviado (simulado en logs del servidor) para restablecer la contraseña.")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO dto) {
+        authService.forgotPassword(dto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Restablecer contraseña", description = "Restablece la contraseña utilizando el token temporal recibido.")
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
+        authService.resetPassword(dto);
+        return ResponseEntity.noContent().build();
+    }
+
     // ==================== ASOCIACIÓN CLIENTE ====================
 
     @Operation(summary = "Asociar cliente a usuario",

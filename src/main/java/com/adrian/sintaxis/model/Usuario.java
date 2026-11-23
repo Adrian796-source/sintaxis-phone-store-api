@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -29,4 +30,7 @@ public class Usuario {
     @JoinColumn(name = "cliente_id_cliente")
     @JsonIgnore
     private Cliente cliente;
+
+    private String resetToken;
+    private LocalDateTime resetTokenExpiry;
 }

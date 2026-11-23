@@ -129,6 +129,39 @@ public class AuthService {
         usuarioRepository.save(usuario);
     }
 
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequestDTO dto) {
+        // Por seguridad, si el usuario no existe no revelamos explícitamente que el correo no existe, 
+        // pero aquí si existe generamos el token de recuperación (ej. válido por 15 minutos).
+        usuarioRepository.findByEmail(dto.getEmail()).ifPresent(usuario -> {
+            String codigoOtp = String.format("%06d", new java.util.Random().nextInt(1000000));
+            usuario.setResetToken(codigoOtp);
+            usuario.setResetTokenExpiry(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")).plusMinutes(10));
+            usuarioRepository.save(usuario);
+
+            // Log en consola para simular el envío del código OTP de 6 dígitos por email
+            org.slf4j.LoggerFactory.getLogger(AuthService.class).warn(
+                    "🔑 [RECUPERACIÓN DE CONTRASEÑA] Código OTP de 6 dígitos generado para {}: {} (Válido por 10 minutos)",
+                    usuario.getEmail(), codigoOtp
+            );
+        });
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordDTO dto) {
+        Usuario usuario = usuarioRepository.findByResetToken(dto.getToken())
+                .orElseThrow(() -> new UsuarioNoEncontradoException("Token de recuperación inválido o inexistente"));
+
+        if (usuario.getResetTokenExpiry() == null || usuario.getResetTokenExpiry().isBefore(LocalDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")))) {
+            throw new IllegalArgumentException("El token de recuperación ha expirado. Solicite uno nuevo.");
+        }
+
+        usuario.setPassword(passwordEncoder.encode(dto.getPasswordNueva()));
+        usuario.setResetToken(null);
+        usuario.setResetTokenExpiry(null);
+        usuarioRepository.save(usuario);
+    }
+
     public PerfilResponseDTO perfil(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO));
