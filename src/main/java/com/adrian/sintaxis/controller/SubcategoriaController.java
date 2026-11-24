@@ -35,4 +35,22 @@ public class SubcategoriaController {
         SubcategoriaDTO creada = subcategoriaService.guardar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(creada);
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @Operation(summary = "Actualizar subcategoría existente (ADMIN o EMPLEADO)", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<SubcategoriaDTO> actualizar(@PathVariable Long id, @Valid @RequestBody SubcategoriaDTO dto) {
+        SubcategoriaDTO actualizada = subcategoriaService.actualizar(id, dto);
+        return ResponseEntity.ok(actualizada);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @Operation(summary = "Eliminar subcategoría (ADMIN o EMPLEADO)",
+            description = "Elimina la subcategoría y desvincula los accesorios asociados (quedan sin subcategoría, sin perderse del inventario).",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        subcategoriaService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
 }

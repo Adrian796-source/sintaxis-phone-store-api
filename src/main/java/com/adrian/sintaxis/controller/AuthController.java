@@ -37,6 +37,20 @@ public class AuthController {
         return ResponseEntity.ok(authService.listarUsuarios());
     }
 
+    @Operation(summary = "Obtener usuario por ID", description = "Obtiene los detalles de un usuario específico por su ID. Requiere rol ADMIN.")
+    @GetMapping("/usuarios/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UsuarioResponseDTO> obtenerUsuarioPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(authService.obtenerUsuarioPorId(id));
+    }
+
+    @Operation(summary = "Actualizar usuario", description = "Actualiza los datos de un usuario existente (nombre, email, rol, estado, contraseña opcional). Requiere rol ADMIN.")
+    @PutMapping("/usuarios/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UsuarioResponseDTO> actualizarUsuario(@PathVariable Long id, @Valid @RequestBody UsuarioUpdateDTO dto) {
+        return ResponseEntity.ok(authService.actualizarUsuario(id, dto));
+    }
+
     @Operation(summary = "Eliminar usuario", description = "Elimina lógicamente o desactiva/elimina un usuario del sistema. Requiere rol ADMIN.")
     @DeleteMapping("/usuarios/{id}")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")

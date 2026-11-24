@@ -237,6 +237,71 @@ public class AuthService {
                 .toList();
     }
 
+    public UsuarioResponseDTO obtenerUsuarioPorId(Long id) {
+        Usuario u = usuarioRepository.findById(id)
+                .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO + " con id: " + id));
+        return new UsuarioResponseDTO(
+                u.getIdUsuario(),
+                u.getNombre(),
+                u.getEmail(),
+                u.getRol() != null ? u.getRol().name() : "CLIENTE",
+                u.isActivo()
+        );
+    }
+
+    @Transactional
+    public UsuarioResponseDTO actualizarUsuario(Long id, UsuarioUpdateDTO dto) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO + " con id: " + id));
+
+        // Validar si el email cambió y si ya existe en otro usuario
+        if (!usuario.getEmail().equalsIgnoreCase(dto.getEmail())) {
+            if (usuarioRepository.existsByEmail(dto.getEmail())) {
+                throw new EmailYaExistenteException("Ya existe otro usuario con ese email");
+            }
+            usuario.setEmail(dto.getEmail());
+            // Si tiene cliente asociado, opcionalmente sincronizar su email si coincide
+            if (usuario.getCliente() != null) {
+                usuario.getCliente().setEmail(dto.getEmail());
+                clienteRepository.save(usuario.getCliente());
+            }
+        }
+
+        usuario.setNombre(dto.getNombre());
+        usuario.setActivo(dto.isActivo());
+
+        // Validar y actualizar rol
+        Rol rol;
+        try {
+            String rolStr = dto.getRol().toUpperCase();
+            if (rolStr.startsWith("ROLE_")) {
+                rolStr = rolStr.substring(5);
+            }
+            rol = Rol.valueOf(rolStr);
+        } catch (IllegalArgumentException e) {
+            throw new RolInvalidoException("Rol inválido. Los valores permitidos son: ADMIN, EMPLEADO, CLIENTE");
+        }
+        usuario.setRol(rol);
+
+        // Si se provee password nueva (no nula y no vacía), encriptarla y actualizarla
+        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            if (dto.getPassword().length() < 6) {
+                throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
+            }
+            usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
+        usuarioRepository.save(usuario);
+
+        return new UsuarioResponseDTO(
+                usuario.getIdUsuario(),
+                usuario.getNombre(),
+                usuario.getEmail(),
+                usuario.getRol().name(),
+                usuario.isActivo()
+        );
+    }
+
     @Transactional
     public void eliminarUsuario(Long idUsuarioAEliminar, String emailAdminLogueado) {
         Usuario usuarioAEliminar = usuarioRepository.findById(idUsuarioAEliminar)

@@ -1,4 +1,4 @@
-# Contexto del Proyecto: Sintaxis Phone Store API
+continua# Contexto del Proyecto: Sintaxis Phone Store API
 
 ## Stack Tecnológico (Backend)
 - **Lenguaje:** Java 17

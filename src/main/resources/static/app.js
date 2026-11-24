@@ -35,6 +35,7 @@ async function cargarProductos() {
 
         filtrarProductos();
         actualizarMetricas([...celularesGlobal, ...accesoriosGlobal]);
+        actualizarContadorStockCritico();
     } catch (error) {
         console.error(error);
         const errorHtml = `<div class="empty-state" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--danger-rose);">
@@ -269,11 +270,22 @@ function crearTarjetaProducto(p) {
 function actualizarMetricas(productos) {
     const total = productos.length;
     const activos = productos.filter(p => p.activo).length;
-    const stockBajo = productos.filter(p => p.stock <= p.stockMinimo).length;
 
     document.getElementById('metric-total').textContent = total;
     document.getElementById('metric-activos').textContent = activos;
-    document.getElementById('metric-stock-bajo').textContent = stockBajo;
+}
+
+function actualizarContadorStockCritico() {
+    const todos = [...celularesGlobal, ...accesoriosGlobal];
+    const criticos = todos.filter(p => {
+        const stock = p.stock !== undefined ? p.stock : 0;
+        const minimo = p.stockMinimo !== undefined ? p.stockMinimo : 5;
+        return stock <= minimo;
+    });
+    const badgeEl = document.getElementById('adminStockCriticoCount');
+    if (badgeEl) {
+        badgeEl.textContent = criticos.length;
+    }
 }
 
 function escapeHtml(str) {
@@ -1022,9 +1034,7 @@ function toggleUserFormModal(abrir) {
 }
 
 function abrirModalNuevoUsuarioAdmin() {
-    const form = document.getElementById('userForm');
-    if (form) form.reset();
-    toggleUserFormModal(true);
+    abrirModalCrearUsuario();
 }
 
 async function cargarUsuariosAdmin() {
@@ -1102,12 +1112,75 @@ function renderizarTablaUsuarios(usuarios) {
                 <td style="padding: 0.8rem 1rem;">
                     ${u.activo !== false ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>'}
                 </td>
-                <td style="padding: 0.8rem 1rem; text-align: right;">
+                <td style="padding: 0.8rem 1rem; text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--accent-cyan); color: var(--accent-cyan);" onclick="abrirModalEditarUsuario(${u.idUsuario})">✏️ Editar</button>
                     <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--danger-rose); color: var(--danger-rose);" onclick="eliminarUsuarioAdmin(${u.idUsuario}, '${escapeHtml(u.email)}')">🗑️ Eliminar</button>
                 </td>
             </tr>
         `;
     }).join('');
+}
+
+let usuarioEnEdicionId = null;
+
+function abrirModalCrearUsuario() {
+    usuarioEnEdicionId = null;
+    const modal = document.getElementById('userFormModal');
+    const title = document.getElementById('userModalTitle');
+    const btnSubmit = document.getElementById('userModalSubmitBtn');
+    const form = document.getElementById('userForm');
+    const errorMsg = document.getElementById('userFormErrorMsg');
+    
+    if (title) title.textContent = '➕ Registrar Nuevo Usuario (Admin)';
+    if (btnSubmit) btnSubmit.textContent = 'Crear Usuario';
+    if (errorMsg) errorMsg.style.display = 'none';
+    if (form) form.reset();
+    
+    const passInput = document.getElementById('adminUserPassword');
+    if (passInput) {
+        passInput.required = true;
+        passInput.placeholder = '••••••••';
+    }
+
+    if (modal) modal.style.display = 'flex';
+}
+
+async function abrirModalEditarUsuario(idUsuario) {
+    usuarioEnEdicionId = idUsuario;
+    const token = localStorage.getItem('sintaxis_token');
+    const modal = document.getElementById('userFormModal');
+    const title = document.getElementById('userModalTitle');
+    const btnSubmit = document.getElementById('userModalSubmitBtn');
+    const errorMsg = document.getElementById('userFormErrorMsg');
+    
+    if (title) title.textContent = '✏️ Editar Usuario (Admin)';
+    if (btnSubmit) btnSubmit.textContent = 'Guardar Cambios';
+    if (errorMsg) errorMsg.style.display = 'none';
+
+    try {
+        const res = await fetch(`/api/auth/usuarios/${idUsuario}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('No se pudo obtener la información del usuario.');
+        const u = await res.json();
+
+        document.getElementById('adminUserNombre').value = u.nombre || '';
+        document.getElementById('adminUserApellido').value = ''; 
+        document.getElementById('adminUserEmail').value = u.email || '';
+        document.getElementById('adminUserRol').value = u.rol.replace('ROLE_', '');
+        
+        const passInput = document.getElementById('adminUserPassword');
+        if (passInput) {
+            passInput.value = '';
+            passInput.required = false;
+            passInput.placeholder = 'Dejar en blanco para mantener contraseña';
+        }
+
+        if (modal) modal.style.display = 'flex';
+    } catch (err) {
+        console.error(err);
+        alert('Error al cargar datos del usuario para editar.');
+    }
 }
 
 async function guardarUsuarioAdmin(event) {
@@ -1122,29 +1195,50 @@ async function guardarUsuarioAdmin(event) {
     const password = document.getElementById('adminUserPassword').value;
     const rol = document.getElementById('adminUserRol').value;
 
-    const dto = { nombre, apellido, email, password, rol };
-
     try {
-        const res = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify(dto)
-        });
+        if (usuarioEnEdicionId) {
+            // Modo Edición (PUT)
+            const dto = { nombre, email, password: password ? password : null, rol, activo: true };
+            const res = await fetch(`/api/auth/usuarios/${usuarioEnEdicionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(dto)
+            });
 
-        if (!res.ok) {
-            const errJson = await res.json().catch(() => ({}));
-            throw new Error(errJson.message || 'Error al crear el usuario.');
+            if (!res.ok) {
+                const errJson = await res.json().catch(() => ({}));
+                throw new Error(errJson.message || 'Error al actualizar el usuario.');
+            }
+
+            alert('¡Usuario actualizado con éxito!');
+        } else {
+            // Modo Creación (POST)
+            const dto = { nombre, apellido, email, password, rol };
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(dto)
+            });
+
+            if (!res.ok) {
+                const errJson = await res.json().catch(() => ({}));
+                throw new Error(errJson.message || 'Error al crear el usuario.');
+            }
+
+            alert(`¡Usuario ${rol} creado con éxito!`);
         }
 
-        alert(`¡Usuario ${rol} creado con éxito!`);
         toggleUserFormModal(false);
         cargarUsuariosAdmin();
     } catch (err) {
         console.error(err);
-        errorMsg.textContent = err.message || 'Error al crear usuario.';
+        errorMsg.textContent = err.message || 'Error al guardar usuario.';
         errorMsg.style.display = 'block';
     }
 }
@@ -1183,20 +1277,66 @@ async function eliminarUsuarioAdmin(idUsuario, emailUsuario) {
 // --- Panel Admin & CRUD con JWT ---
 let adminTabActiva = 'todos';
 
-function toggleAdminModal(abrir) {
+/**
+ * Verificación real de la sesión contra el backend. Nunca se confía únicamente
+ * en el rol guardado en localStorage (que puede ser manipulado desde el navegador).
+ */
+async function verificarAccesoAdminServidor(token) {
+    try {
+        const res = await fetch('/api/auth/perfil', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) return { autorizado: false, status: res.status };
+
+        const perfil = await res.json();
+        const rol = String(perfil.rol || '').replace(/^ROLE_/, '');
+        return {
+            autorizado: rol === 'ADMIN' || rol === 'EMPLEADO',
+            rol,
+            status: res.status,
+            perfil
+        };
+    } catch (err) {
+        console.error('No se pudo verificar la sesión contra el servidor', err);
+        return { autorizado: false, status: 0 };
+    }
+}
+
+function limpiarSesionLocal() {
+    ['sintaxis_token', 'sintaxis_rol', 'sintaxis_email', 'sintaxis_idCliente'].forEach(k => localStorage.removeItem(k));
+    detenerTemporizadorInactividad();
+    actualizarUIAuth();
+}
+
+async function toggleAdminModal(abrir) {
     const token = localStorage.getItem('sintaxis_token');
-    const rol = localStorage.getItem('sintaxis_rol');
+    const rolLocal = localStorage.getItem('sintaxis_rol');
 
     if (abrir) {
-        if (!token || (rol !== 'ROLE_ADMIN' && rol !== 'ROLE_EMPLEADO' && rol !== 'ADMIN' && rol !== 'EMPLEADO')) {
-            alert('Acceso denegado: No tienes permisos de Administrador o Empleado.');
+        if (!token || (rolLocal !== 'ROLE_ADMIN' && rolLocal !== 'ROLE_EMPLEADO' && rolLocal !== 'ADMIN' && rolLocal !== 'EMPLEADO')) {
+            mostrarToast('Acceso denegado: no tenés permisos de Administrador o Empleado.', 'error');
             return;
         }
+
+        const verificacion = await verificarAccesoAdminServidor(token);
+        if (!verificacion.autorizado) {
+            if (verificacion.status === 401 || verificacion.status === 403) {
+                limpiarSesionLocal();
+                mostrarToast('Tu sesión expiró o no tenés permisos. Iniciá sesión nuevamente.', 'error');
+            } else {
+                mostrarToast('No se pudo verificar la sesión con el servidor. Intentá nuevamente.', 'error');
+            }
+            return;
+        }
+
+        // El rol autoritativo es el que devuelve el backend.
+        localStorage.setItem('sintaxis_rol', 'ROLE_' + verificacion.rol);
     }
 
     const modal = document.getElementById('adminModal');
     if (abrir) {
         modal.style.display = 'flex';
+        actualizarContadorStockCritico();
         cambiarAdminTab('todos');
     } else {
         modal.style.display = 'none';
@@ -1211,30 +1351,32 @@ function cambiarAdminTab(tab) {
     const clientesSection = document.getElementById('adminClientesSection');
     const searchInput = document.getElementById('adminSearchInput');
 
-    ['todos', 'celulares', 'accesorios', 'usuarios', 'clientes', 'ventas'].forEach(t => {
+    ['todos', 'celulares', 'accesorios', 'stock-critico', 'usuarios', 'clientes', 'subcategorias', 'ventas'].forEach(t => {
         const btn = document.getElementById(`admin-tab-${t}`);
         if (btn) {
             if (t === tab) {
-                btn.style.background = 'var(--accent-cyan)';
-                btn.style.color = '#090A0F';
+                btn.style.background = t === 'stock-critico' ? 'rgba(244,63,94,0.2)' : 'var(--accent-cyan)';
+                btn.style.color = t === 'stock-critico' ? 'var(--danger-rose)' : '#090A0F';
                 btn.style.fontWeight = '600';
-                btn.style.border = 'none';
+                btn.style.border = t === 'stock-critico' ? '1px solid var(--danger-rose)' : 'none';
             } else {
                 btn.style.background = 'transparent';
-                btn.style.color = 'var(--text-secondary)';
+                btn.style.color = t === 'stock-critico' ? 'var(--danger-rose)' : 'var(--text-secondary)';
                 btn.style.fontWeight = '400';
-                btn.style.border = '1px solid var(--border-color)';
+                btn.style.border = t === 'stock-critico' ? '1px solid rgba(244,63,94,0.3)' : '1px solid var(--border-color)';
             }
         }
     });
 
-    const headerActionsContainer = document.querySelector('#adminModal div > div > div:last-child');
+    const headerActionsContainer = document.getElementById('adminHeaderActions');
     const existingBtn = document.getElementById('btnAdminAccionPrincipal');
     if (existingBtn) existingBtn.remove();
 
     if (tab === 'usuarios') {
         if (prodSection) prodSection.style.display = 'none';
         if (userSection) userSection.style.display = 'block';
+        const subcatSection = document.getElementById('adminSubcategoriasSection');
+        if (subcatSection) subcatSection.style.display = 'none';
         if (ventasSection) ventasSection.style.display = 'none';
         if (clientesSection) clientesSection.style.display = 'none';
         if (searchInput) searchInput.style.display = 'none';
@@ -1252,14 +1394,40 @@ function cambiarAdminTab(tab) {
     } else if (tab === 'clientes') {
         if (prodSection) prodSection.style.display = 'none';
         if (userSection) userSection.style.display = 'none';
+        const subcatSection = document.getElementById('adminSubcategoriasSection');
+        if (subcatSection) subcatSection.style.display = 'none';
         if (ventasSection) ventasSection.style.display = 'none';
         if (clientesSection) clientesSection.style.display = 'block';
         if (searchInput) searchInput.style.display = 'none';
 
         cargarClientesAdmin();
+    } else if (tab === 'subcategorias') {
+        if (prodSection) prodSection.style.display = 'none';
+        if (userSection) userSection.style.display = 'none';
+        const subcatSection = document.getElementById('adminSubcategoriasSection');
+        if (subcatSection) subcatSection.style.display = 'flex';
+        if (ventasSection) ventasSection.style.display = 'none';
+        if (clientesSection) clientesSection.style.display = 'none';
+        if (searchInput) searchInput.style.display = 'none';
+
+        if (headerActionsContainer) {
+            const newBtn = document.createElement('button');
+            newBtn.id = 'btnAdminAccionPrincipal';
+            newBtn.className = 'btn btn-primary';
+            newBtn.style.background = 'rgba(56, 189, 248, 0.15)';
+            newBtn.style.color = 'var(--accent-cyan)';
+            newBtn.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+            newBtn.innerHTML = '+ Nueva Subcategoría';
+            newBtn.onclick = abrirModalNuevaSubcategoria;
+            headerActionsContainer.prepend(newBtn);
+        }
+
+        cargarSubcategoriasAdmin();
     } else if (tab === 'ventas') {
         if (prodSection) prodSection.style.display = 'none';
         if (userSection) userSection.style.display = 'none';
+        const subcatSection = document.getElementById('adminSubcategoriasSection');
+        if (subcatSection) subcatSection.style.display = 'none';
         if (ventasSection) ventasSection.style.display = 'flex';
         if (clientesSection) clientesSection.style.display = 'none';
         if (searchInput) {
@@ -1271,6 +1439,8 @@ function cambiarAdminTab(tab) {
     } else {
         if (prodSection) prodSection.style.display = 'block';
         if (userSection) userSection.style.display = 'none';
+        const subcatSection = document.getElementById('adminSubcategoriasSection');
+        if (subcatSection) subcatSection.style.display = 'none';
         if (ventasSection) ventasSection.style.display = 'none';
         if (clientesSection) clientesSection.style.display = 'none';
         if (searchInput) searchInput.style.display = 'block';
@@ -1630,6 +1800,7 @@ async function cambiarEstadoVentaAdmin(idVenta, nuevoEstado) {
 }
 
 function cargarProductosAdmin() {
+    actualizarContadorStockCritico();
     filtrarProductosAdmin();
 }
 
@@ -1641,6 +1812,8 @@ function filtrarProductosAdmin() {
         fuente = celularesGlobal;
     } else if (adminTabActiva === 'accesorios') {
         fuente = accesoriosGlobal;
+    } else if (adminTabActiva === 'stock-critico') {
+        fuente = [...celularesGlobal, ...accesoriosGlobal].filter(p => p.stock <= p.stockMinimo);
     }
 
     const query = (document.getElementById('adminSearchInput')?.value || '').trim().toLowerCase();
@@ -1980,55 +2153,205 @@ function renderizarFiltrosSubcategorias() {
     if (!container) return;
 
     let html = `<span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-right: 0.5rem; letter-spacing: 0.05em;">Subcategorías Accesorios:</span>`;
-    
-    const isTodasActive = subcategoriaActiva === 'Todas';
-    html += `<button class="btn subcat-btn ${isTodasActive ? 'active' : ''}" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: ${isTodasActive ? 'var(--accent-cyan)' : 'transparent'}; color: ${isTodasActive ? '#090A0F' : 'var(--text-secondary)'}; border: ${isTodasActive ? 'none' : '1px solid var(--border-color)'}; font-weight: ${isTodasActive ? '600' : '400'};" onclick="cambiarSubcategoria('Todas')">Todas</button>`;
+
+    const botonSubcategoria = (nombreSub) => {
+        const isActive = subcategoriaActiva === nombreSub;
+        return `<button type="button" class="btn subcat-btn ${isActive ? 'active' : ''}" data-subcategoria="${escapeHtml(nombreSub)}" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: ${isActive ? 'var(--accent-cyan)' : 'transparent'}; color: ${isActive ? '#090A0F' : 'var(--text-secondary)'}; border: ${isActive ? 'none' : '1px solid var(--border-color)'}; font-weight: ${isActive ? '600' : '400'};">${escapeHtml(nombreSub)}</button>`;
+    };
+
+    html += botonSubcategoria('Todas');
 
     subcategoriasGlobal.forEach(s => {
         const nombreSub = typeof s === 'string' ? s : (s.nombre || '');
-        if (!nombreSub) return;
-        const isActive = subcategoriaActiva === nombreSub;
-        html += `<button class="btn subcat-btn ${isActive ? 'active' : ''}" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: ${isActive ? 'var(--accent-cyan)' : 'transparent'}; color: ${isActive ? '#090A0F' : 'var(--text-secondary)'}; border: ${isActive ? 'none' : '1px solid var(--border-color)'}; font-weight: ${isActive ? '600' : '400'};" onclick="cambiarSubcategoria('${escapeHtml(nombreSub)}')">${escapeHtml(nombreSub)}</button>`;
+        if (!nombreSub || nombreSub.toLowerCase() === 'celulares' || nombreSub.toLowerCase() === 'celular') return;
+        html += botonSubcategoria(nombreSub);
     });
 
     container.innerHTML = html;
+
+    // Delegación de eventos: el nombre de la subcategoría NUNCA se interpreta como código JS
+    // (evita XSS almacenado a través de nombres manipulados).
+    if (!container.dataset.listenerAttached) {
+        container.addEventListener('click', (event) => {
+            const btn = event.target.closest('.subcat-btn');
+            if (!btn) return;
+            const nombre = btn.dataset.subcategoria;
+            if (typeof nombre === 'string') cambiarSubcategoria(nombre);
+        });
+        container.dataset.listenerAttached = 'true';
+    }
 }
 
-function toggleSubcatFormModal(abrir) {
-    const modal = document.getElementById('subcatFormModal');
+// --- Panel de Administración: Editar / Eliminar Subcategorías ---
+
+function contarAccesoriosDeSubcategoria(idSubcategoria) {
+    const idNum = Number(idSubcategoria);
+    return (accesoriosGlobal || []).filter(a => {
+        const idAcc = a.subcategoriaId != null
+            ? Number(a.subcategoriaId)
+            : (a.subcategoria ? Number(a.subcategoria.idSubcategoria) : NaN);
+        return idAcc === idNum;
+    }).length;
+}
+
+async function cargarSubcategoriasAdmin() {
+    const tbody = document.getElementById('adminSubcategoriaTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="4" class="loading">Cargando subcategorías...</td></tr>`;
+
+    try {
+        // Endpoint público: no se envía el token para que el listado siga funcionando
+        // aunque la sesión haya expirado (las escrituras sí lo requieren).
+        const res = await fetch('/api/subcategorias');
+
+        if (!res.ok) throw new Error('No se pudieron cargar las subcategorías.');
+
+        const data = await res.json();
+        subcategoriasGlobal = Array.isArray(data) ? data : (data.content || []);
+        renderizarTablaSubcategoriasAdmin();
+        poblarSelectSubcategoriasForm();
+        renderizarFiltrosSubcategorias();
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="padding: 2rem 1rem; color: var(--danger-rose);">
+            <strong>Error al cargar subcategorías</strong><br><span style="font-size: 0.8rem;">${escapeHtml(err.message || '')}</span>
+        </td></tr>`;
+    }
+}
+
+function renderizarTablaSubcategoriasAdmin() {
+    const tbody = document.getElementById('adminSubcategoriaTableBody');
+    if (!tbody) return;
+
+    if (!subcategoriasGlobal || subcategoriasGlobal.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="padding: 3rem 1rem; text-align: center;">
+            <strong>No hay subcategorías registradas.</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.35rem;">Creá la primera con el botón “+ Nueva Subcategoría”.</p>
+        </td></tr>`;
+        return;
+    }
+
+    const filas = subcategoriasGlobal.map(s => {
+        const id = Number(s.idSubcategoria || s.id);
+        if (!Number.isInteger(id)) return '';
+        const nombre = s.nombre || '';
+        const cantidad = contarAccesoriosDeSubcategoria(id);
+        const badgeColor = cantidad > 0 ? 'rgba(56, 189, 248, 0.15)' : 'rgba(148, 163, 184, 0.12)';
+        const badgeText = cantidad > 0 ? 'var(--accent-cyan)' : 'var(--text-secondary)';
+
+        return `<tr>
+            <td style="padding: 0.8rem 1rem; font-family: 'JetBrains Mono', monospace; color: var(--text-secondary);">#${id}</td>
+            <td style="padding: 0.8rem 1rem; font-weight: 500; color: var(--text-main);">${escapeHtml(nombre)}</td>
+            <td style="padding: 0.8rem 1rem;">
+                <span style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 999px; background: ${badgeColor}; color: ${badgeText};">${cantidad}</span>
+            </td>
+            <td style="padding: 0.8rem 1rem; text-align: right; white-space: nowrap;">
+                <button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: rgba(56, 189, 248, 0.12); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); margin-right: 0.35rem;" onclick="abrirModalEditarSubcategoria(${id})">✏️ Editar</button>
+                <button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: rgba(244, 63, 94, 0.12); color: var(--danger-rose); border: 1px solid rgba(244, 63, 94, 0.3);" onclick="eliminarSubcategoriaAdmin(${id})">🗑️ Eliminar</button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    tbody.innerHTML = filas;
+}
+
+function toggleSubcategoriaModal(abrir) {
+    const modal = document.getElementById('subcategoriaModal');
     const errorMsg = document.getElementById('subcatFormErrorMsg');
     if (errorMsg) {
         errorMsg.style.display = 'none';
         errorMsg.textContent = '';
     }
-    if (modal) {
-        modal.style.display = abrir ? 'flex' : 'none';
-    }
+    if (modal) modal.style.display = abrir ? 'flex' : 'none';
 }
 
 function abrirModalNuevaSubcategoria() {
-    const form = document.getElementById('subcatForm');
+    const form = document.getElementById('subcategoriaForm');
     if (form) form.reset();
-    toggleSubcatFormModal(true);
+
+    const idInput = document.getElementById('subcatId');
+    if (idInput) idInput.value = '';
+
+    const title = document.getElementById('subcatModalTitle');
+    if (title) title.innerHTML = '📂 Nueva Subcategoría';
+
+    const hint = document.getElementById('subcatModalHint');
+    if (hint) {
+        hint.style.display = 'none';
+        hint.textContent = '';
+    }
+
+    const submitBtn = document.getElementById('subcatSubmitBtn');
+    if (submitBtn) submitBtn.textContent = 'Crear Subcategoría';
+
+    toggleSubcategoriaModal(true);
+    setTimeout(() => document.getElementById('subcatNombreInput')?.focus(), 50);
+}
+
+function abrirModalEditarSubcategoria(id) {
+    const sub = (subcategoriasGlobal || []).find(s => Number(s.idSubcategoria || s.id) === Number(id));
+    if (!sub) {
+        mostrarToast('No se encontró la subcategoría seleccionada.', 'error');
+        return;
+    }
+
+    const form = document.getElementById('subcategoriaForm');
+    if (form) form.reset();
+
+    document.getElementById('subcatId').value = sub.idSubcategoria || sub.id;
+    document.getElementById('subcatNombreInput').value = sub.nombre || '';
+
+    const title = document.getElementById('subcatModalTitle');
+    if (title) title.innerHTML = '✏️ Editar Subcategoría';
+
+    const cantidad = contarAccesoriosDeSubcategoria(sub.idSubcategoria || sub.id);
+    const hint = document.getElementById('subcatModalHint');
+    if (hint) {
+        hint.textContent = cantidad > 0
+            ? `Esta subcategoría tiene ${cantidad} accesorio(s) asociado(s). Al renombrarla se actualizará la etiqueta de esos productos.`
+            : 'Esta subcategoría todavía no tiene accesorios asociados.';
+        hint.style.display = 'block';
+    }
+
+    const submitBtn = document.getElementById('subcatSubmitBtn');
+    if (submitBtn) submitBtn.textContent = 'Guardar Cambios';
+
+    toggleSubcategoriaModal(true);
+    setTimeout(() => document.getElementById('subcatNombreInput')?.focus(), 50);
 }
 
 async function guardarSubcategoriaAdmin(event) {
     event.preventDefault();
     const token = localStorage.getItem('sintaxis_token');
     const errorMsg = document.getElementById('subcatFormErrorMsg');
+    const submitBtn = document.getElementById('subcatSubmitBtn');
     if (errorMsg) errorMsg.style.display = 'none';
 
     if (!token) {
-        alert('Debe iniciar sesión como ADMIN o EMPLEADO.');
+        mostrarToast('Debe iniciar sesión como ADMIN o EMPLEADO.', 'error');
         return;
     }
 
-    const nombre = document.getElementById('formSubcatNombre').value.trim();
-    if (!nombre) return;
+    const id = document.getElementById('subcatId')?.value;
+    const nombre = (document.getElementById('subcatNombreInput')?.value || '').trim();
+    if (!nombre) {
+        if (errorMsg) {
+            errorMsg.textContent = 'El nombre de la subcategoría es obligatorio.';
+            errorMsg.style.display = 'block';
+        }
+        return;
+    }
+
+    const esEdicion = !!id;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Guardando...';
+    }
 
     try {
-        const res = await fetch('/api/subcategorias', {
-            method: 'POST',
+        const res = await fetch(esEdicion ? `/api/subcategorias/${id}` : '/api/subcategorias', {
+            method: esEdicion ? 'PUT' : 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
@@ -2038,19 +2361,139 @@ async function guardarSubcategoriaAdmin(event) {
 
         if (!res.ok) {
             const errJson = await res.json().catch(() => ({}));
-            throw new Error(errJson.message || 'Error al crear la subcategoría.');
+            throw new Error(errJson.error || errJson.message || 'No se pudo guardar la subcategoría.');
         }
 
-        alert(`¡Subcategoría "${nombre}" creada con éxito!`);
-        toggleSubcatFormModal(false);
+        toggleSubcategoriaModal(false);
+        mostrarToast(esEdicion ? `Subcategoría actualizada a "${escapeHtml(nombre)}".` : `Subcategoría "${escapeHtml(nombre)}" creada con éxito.`);
+
         await cargarSubcategorias();
+        await cargarProductos();
+        renderizarTablaSubcategoriasAdmin();
     } catch (err) {
         console.error(err);
+        const mensaje = err.message || 'Error al guardar la subcategoría.';
         if (errorMsg) {
-            errorMsg.textContent = err.message || 'Error al guardar subcategoría.';
+            errorMsg.textContent = mensaje;
             errorMsg.style.display = 'block';
         } else {
-            alert(err.message || 'Error al guardar subcategoría.');
+            mostrarToast(escapeHtml(mensaje), 'error');
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = esEdicion ? 'Guardar Cambios' : 'Crear Subcategoría';
+        }
+    }
+}
+
+let subcategoriaPendienteEliminar = null;
+
+function toggleEliminarSubcategoriaModal(abrir) {
+    const modal = document.getElementById('subcategoriaDeleteModal');
+    const errorMsg = document.getElementById('subcatDeleteErrorMsg');
+    const confirmBtn = document.getElementById('subcatDeleteConfirmBtn');
+
+    if (errorMsg) {
+        errorMsg.style.display = 'none';
+        errorMsg.textContent = '';
+    }
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Eliminar definitivamente';
+    }
+    if (modal) modal.style.display = abrir ? 'flex' : 'none';
+
+    if (!abrir) subcategoriaPendienteEliminar = null;
+}
+
+function eliminarSubcategoriaAdmin(id) {
+    const token = localStorage.getItem('sintaxis_token');
+    if (!token) {
+        mostrarToast('Debe iniciar sesión como ADMIN o EMPLEADO.', 'error');
+        return;
+    }
+
+    const idNum = Number(id);
+    if (!Number.isInteger(idNum)) {
+        mostrarToast('Subcategoría inválida.', 'error');
+        return;
+    }
+
+    const sub = (subcategoriasGlobal || []).find(s => Number(s.idSubcategoria || s.id) === idNum);
+    const nombre = sub ? sub.nombre : `#${idNum}`;
+    const cantidad = contarAccesoriosDeSubcategoria(idNum);
+
+    subcategoriaPendienteEliminar = { id: idNum, nombre, cantidad };
+
+    document.getElementById('subcatDeleteNombre').textContent = `"${nombre}"`;
+
+    const warning = document.getElementById('subcatDeleteWarning');
+    if (warning) {
+        if (cantidad > 0) {
+            warning.textContent = `⚠️ ${cantidad} accesorio(s) asociado(s) quedarán sin subcategoría asignada. No se eliminarán del inventario ni del historial de ventas.`;
+            warning.style.display = 'block';
+        } else {
+            warning.style.display = 'none';
+            warning.textContent = '';
+        }
+    }
+
+    toggleEliminarSubcategoriaModal(true);
+}
+
+async function confirmarEliminacionSubcategoria() {
+    const token = localStorage.getItem('sintaxis_token');
+    const pendiente = subcategoriaPendienteEliminar;
+    const errorMsg = document.getElementById('subcatDeleteErrorMsg');
+    const confirmBtn = document.getElementById('subcatDeleteConfirmBtn');
+
+    if (!token) {
+        mostrarToast('Debe iniciar sesión como ADMIN o EMPLEADO.', 'error');
+        return;
+    }
+    if (!pendiente) return;
+
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Eliminando...';
+    }
+
+    try {
+        const res = await fetch(`/api/subcategorias/${pendiente.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.error || errJson.message || 'No se pudo eliminar la subcategoría.');
+        }
+
+        toggleEliminarSubcategoriaModal(false);
+
+        // Se muestra el nombre como texto escapado para el toast (se inyecta con innerHTML).
+        mostrarToast(`Subcategoría "${escapeHtml(pendiente.nombre)}" eliminada.`);
+
+        if (subcategoriaActiva === pendiente.nombre) {
+            subcategoriaActiva = 'Todas';
+        }
+
+        await cargarSubcategorias();
+        await cargarProductos();
+        renderizarTablaSubcategoriasAdmin();
+    } catch (err) {
+        console.error(err);
+        const mensaje = err.message || 'Error al eliminar la subcategoría.';
+        if (errorMsg) {
+            errorMsg.textContent = mensaje;
+            errorMsg.style.display = 'block';
+        } else {
+            mostrarToast(escapeHtml(mensaje), 'error');
+        }
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Eliminar definitivamente';
         }
     }
 }

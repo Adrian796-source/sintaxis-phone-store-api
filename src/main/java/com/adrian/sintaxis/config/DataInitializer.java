@@ -19,11 +19,10 @@ public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Lee las variables de entorno (Render) o usa valores por defecto si estás en local
-    @Value("${ADMIN_EMAIL:admin@localhost.com}")
+    @Value("${admin.email}")
     private String adminEmail;
 
-    @Value("${ADMIN_PASSWORD:admin123}")
+    @Value("${admin.password}")
     private String adminPassword;
 
     @Override

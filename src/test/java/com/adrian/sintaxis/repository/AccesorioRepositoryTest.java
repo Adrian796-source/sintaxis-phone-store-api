@@ -1,6 +1,7 @@
 package com.adrian.sintaxis.repository;
 
 import com.adrian.sintaxis.model.Accesorio;
+import com.adrian.sintaxis.model.Subcategoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +26,17 @@ class AccesorioRepositoryTest {
     private Accesorio accesorio1;
     private Accesorio accesorio2;
     private Accesorio accesorio3;
+    private Subcategoria subcategoria;
 
     @BeforeEach
     void setUp() {
+        subcategoria = new Subcategoria();
+        subcategoria.setNombre("Fundas Test");
+        entityManager.persist(subcategoria);
+
         // Accesorio 1 - Funda Original (compatible con iPhone 15 Pro Max)
         accesorio1 = new Accesorio();
+        accesorio1.setSubcategoria(subcategoria);
         accesorio1.setNombre("Funda de Silicona");
         accesorio1.setPrecio(25.99);
         accesorio1.setStock(100);
@@ -47,6 +54,7 @@ class AccesorioRepositoryTest {
 
         // Accesorio 2 - Cargador Compatible (compatible con iPhone)
         accesorio2 = new Accesorio();
+        accesorio2.setSubcategoria(subcategoria);
         accesorio2.setNombre("Cargador USB-C");
         accesorio2.setPrecio(15.99);
         accesorio2.setStock(50);
@@ -148,5 +156,17 @@ class AccesorioRepositoryTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getNombre()).isEqualTo("Cargador USB-C");
+    }
+
+    @Test
+    void findBySubcategoriaIdSubcategoria_ShouldReturnOnlyAccesoriosOfThatSubcategoria() {
+        Long idSubcategoria = subcategoria.getIdSubcategoria();
+
+        List<Accesorio> resultado = accesorioRepository.findBySubcategoriaIdSubcategoria(idSubcategoria);
+
+        assertThat(resultado).hasSize(2);
+        assertThat(accesorioRepository.countBySubcategoriaIdSubcategoria(idSubcategoria)).isEqualTo(2);
+        assertThat(resultado).extracting("nombre")
+                .containsExactlyInAnyOrder("Funda de Silicona", "Cargador USB-C");
     }
 }

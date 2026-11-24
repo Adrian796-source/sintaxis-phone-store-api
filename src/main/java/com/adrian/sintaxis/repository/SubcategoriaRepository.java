@@ -7,4 +7,6 @@ import java.util.Optional;
 public interface SubcategoriaRepository extends JpaRepository<Subcategoria, Long> {
     Optional<Subcategoria> findByNombre(String nombre);
     boolean existsByNombre(String nombre);
+    boolean existsByNombreIgnoreCase(String nombre);
+    boolean existsByNombreIgnoreCaseAndIdSubcategoriaNot(String nombre, Long idSubcategoria);
 }
